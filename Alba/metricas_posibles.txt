@@ -1,0 +1,22 @@
+Dias que tarda un usuario en devolver el dinero.
+diferencia entre send_at (cuando recibe el dinero) y money_back_date (fecha en la que tenemos de vuelta el dinero)
+
+Ratio de incidentes por cohorte.
+numero de incidencias entre el numero total de entradas en fee (*100)
+
+Churn rate, para mirar porcentaje de usuarios que han deleted su account.
+numero de deleted_id entre total de user_id (*100)
+
+Total fee income por cohorte.
+mirar evolución en el tiempo
+
+Estudiar morosidad.
+los que teienen campo paid_at vacío serían morosos (hay esos 35 que lo tienen vacío pero aún asi parece que hubo transacción pero los ignoramos)
+para los morosos mirar:
+si sus cuentas son de las eliminadas
+si van a generar ingresos futuros gracias a múltiples postpone
+si estan asociados a incidencias
+
+Estudiar incidencias.
+por cohortes ver tasa incidencias.
+mirar si a más incidencias hay más/menos usuarios o ingresos
