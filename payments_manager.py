@@ -308,8 +308,50 @@ class Manager:
         #df_jo['to_reimbur_cash_de'] = (df_jo.reimbursement_date-df_jo.send_at).dt.days()
         df_jo['to_reimbur_cash_de'] = (df_jo['reimbursement_date'] - df_jo['send_at']).dt.days
 
+
+
+
+
+
+
+
         # Tiempo que la empresa presta el dinero.
+        # Dedicion de money_back_date: - Date where the CR was "considered" as money back. 
+        #   It's either the paid_by_card date or 
+        #   the date were we considered that's the direc debit "have low odds to be rejected" (based on business rules) 
         df_jo['to_end'] = df_jo.reimbursement_date-df_jo.money_back_date
+
+
+        #### Calcular la medias:
+        #* 2,94 dias de demora promedio en las transferencias bancarias
+        #* 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+
+        # pd.options.display.max_columns = None
+        # df = pm.df('df_jo')
+        # # Calcular la medias:
+
+        # # 2,94 dias de demora promedio en las transferencias bancarias
+        # print(df['to_receive_bank'].dt.days.mean())
+        # #x = df['to_b2b_delay'] = (df.cr_received_date-df.send_at).dt.days
+        # #display(x.notna().mean())
+        # #display(df['to_b2b_delay'])# .mean()
+
+        # # 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+        # df['to_fee_paid_delay'] = (df.paid_at -df.created_at).dt.days
+        # x =  df[(df['to_fee_paid_delay'].notna()) & (df['stat_cr'] == 'money_back')]
+        # display(x.to_fee_paid_delay.mean())
+
+
+
+
+
+
+
+
+
+
+
+
 
         #* Demora:
         #df['to_delay'] = df_jo.money_back_date-df_jo.reimbursement_date
