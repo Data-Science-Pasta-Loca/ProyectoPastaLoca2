@@ -476,6 +476,9 @@ class Manager:
         df_jo['created_at_slot'] = df_jo['created_at'].apply(clasificar_hora)
         df_jo['created_at_slot_h'] = df_jo['created_at'].apply(clasificar_hora_h)
 
+        # Determinar el dia de la semana de CR created_at
+        df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
+
         cls.add_df(df_jo,"df_jo")
 
 
