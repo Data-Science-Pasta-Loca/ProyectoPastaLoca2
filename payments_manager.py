@@ -453,6 +453,8 @@ class Manager:
     def calc_columns(cls):
         '''
         '''
+
+        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back y numero de feeds
         df_jo = cls.get_df("df_jo")
         df_jo['n_fees'] = df_jo.query(
         'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
@@ -464,7 +466,18 @@ class Manager:
                     ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
         df_jo['n_fees'] = df_jo['n_fees'].fillna(0).astype(int)
         df_jo['n_backs'] = df_jo['n_backs'].fillna(0).astype(int)
+
+        # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
+        # de 7 a 14 mañana, 
+        # de 14 a 21 tarde,
+        # de 21 a 6 noche
+        clasificar_hora = lambda hora: "7" if 7 <= hora.hour < 14 else ("14" if 14 <= hora.hour < 21 else "21")
+        clasificar_hora_h = lambda hora: f"{hora.hour}-Mañana" if 7 <= hora.hour < 14 else (f"{hora.hour}-Tarde" if 14 <= hora.hour < 21 else f"{hora.hour}-Noche")
+        df_jo['created_at_slot'] = df_jo['created_at'].apply(clasificar_hora)
+        df_jo['created_at_slot_h'] = df_jo['created_at'].apply(clasificar_hora_h)
+
         cls.add_df(df_jo,"df_jo")
+
 
     @classmethod
     def filter_data(cls, df_name, **conditions):
