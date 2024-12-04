@@ -83,6 +83,7 @@ class Manager:
             else:    
                 self.load_data(cr_path, fe_path)
                 self.format_data()
+                self.calc_columns()
 
     @classmethod
     def get_df(cls, name='df'):
@@ -158,8 +159,6 @@ class Manager:
         # Dataframe normalitzat
         cr_cp = cls.get_df("cr").copy()
         fe_cp = cls.get_df("fe").copy()
-        #cr_cp.info()
-        #display(cr_cp)
 
         # Eliminem registres que no es corresponen amb CR al buscar id null - (Cash Request)
         # Instant Payment Cash Request 11164
@@ -167,6 +166,7 @@ class Manager:
         # Instant Payment Cash Request 11788
         # Instant Payment Cash Request 12212
         fe_cp = fe_cp.dropna(subset=['cash_request_id'])
+
         
         #if 'cash_request_id' not in fe_cp.columns:
         #    fe_cp['cash_request_id'] = 0  # O un altre valor predeterminat
@@ -174,6 +174,7 @@ class Manager:
         # Convertir a INT i treure els nulls, deixant el valor a 0. 
         #fe_cp['cash_request_id'] = fe_cp['cash_request_id'].fillna(0).astype(int)
         fe_cp['cash_request_id'] = fe_cp['cash_request_id'].round().astype('Int64')
+
 
         cr_cp['created_at'] = pd.to_datetime(cr_cp['created_at']) #Normalizar fechas
         cr_cp['created_at'] = cr_cp['created_at'].dt.tz_localize(None)
@@ -188,9 +189,8 @@ class Manager:
                 cr_cp[col] = pd.to_datetime(cr_cp[col],format='ISO8601')
                 cr_cp[col] = cr_cp[col].dt.tz_localize(None)  # Elimina la informació de zona horària
         
-        # Convertir a INT i treure els nulls, deixant el valor a 0. 
+         # Convertir a INT i treure els nulls, deixant el valor a 0. 
         cr_cp['user_id'] = cr_cp['user_id'].fillna(0).astype(int)
-        
         
         cr_cp['recovery_status'] = cr_cp['recovery_status'].fillna('nice')#.astype(int)
         fe_cp['category'] = fe_cp['category'].fillna('nice')#.astype(int)
@@ -201,6 +201,15 @@ class Manager:
         # Eliminar les files que no tenen sentit respecte a dates:
         cr_cp.drop(cr_cp[cr_cp['created_at'] > cr_cp['money_back_date']].index, inplace=True)
         cr_cp.drop(cr_cp[cr_cp['created_at'] > cr_cp['reimbursement_date']].index, inplace=True)
+
+
+        #cr_cp.info()
+        #display(cr_cp)
+
+        #if 'cash_request_id' not in fe_cp.columns:
+        #    fe_cp['cash_request_id'] = 0  # O un altre valor predeterminat
+        fe_cp['cash_request_id'] = fe_cp['cash_request_id'].fillna(0).astype(int)
+        #fe_cp['cash_request_id'] = fe_cp['cash_request_id'].astype(int)
 
         # Normalitzar i deslocalitzar dates
         date_cols = ['created_at','updated_at','paid_at','from_date','to_date']
@@ -274,12 +283,14 @@ class Manager:
         df_jo = df_jo.rename(columns={'id_y': 'id_fe'})
         df_jo = df_jo.rename(columns={'cash_request_id': 'fe_cr_id'})
         df_jo = df_jo.rename(columns={'status_x': 'stat_cr'})
-        df_jo = df_jo.rename(columns={'created_at_x': 'created_at'})
-        df_jo = df_jo.rename(columns={'created_at_y': 'created_at_fe'})
-        df_jo = df_jo.rename(columns={'updated_at_x': 'updated_at'})
         df_jo = df_jo.rename(columns={'status_y': 'stat_fe'})
-        df_jo = df_jo.rename(columns={'created_at_y': 'created_at_fe'})
+
+        df_jo = df_jo.rename(columns={'created_at_x': 'created_at'})
+        df_jo = df_jo.rename(columns={'created_at_y': 'created_at_fe'})        
         
+        df_jo = df_jo.rename(columns={'updated_at_x': 'updated_at'})
+        df_jo = df_jo.rename(columns={'updated_at_y': 'updated_at_fe'})
+
         df_jo['id_fe'] = df_jo['id_fe'].fillna(0).astype(int)
 
         # Copiar para mantener compatibilidad
@@ -291,6 +302,7 @@ class Manager:
         
         df_jo['Mes_created_at'] = df_jo['created_at'].dt.to_period('M')
         
+
         # Tiempo que tarda en recibir el dinero el usuario desde la primera accion.
         # cr_received_date  (cash_request_received_date) = ??
         df_jo['to_receive_ini'] = df_jo.cash_request_received_date-df_jo.created_at
@@ -307,6 +319,8 @@ class Manager:
         df_jo['to_reimbur_cash'] = df_jo.reimbursement_date-df_jo.send_at
         #df_jo['to_reimbur_cash_de'] = (df_jo.reimbursement_date-df_jo.send_at).dt.days()
         df_jo['to_reimbur_cash_de'] = (df_jo['reimbursement_date'] - df_jo['send_at']).dt.days
+
+
 
 
 
@@ -375,26 +389,25 @@ class Manager:
             else row['cr_received_date'], axis=1
         )
 
-        order = ['id_cr','id_fe', 'fe_cr_id','user_id', 'created_at','created_at_fe','amount','fee','stat_cr','stat_fe','transfer_type','type',
+        order = ['id_cr','id_fe', 'fe_cr_id','user_id','active', 'created_at','created_at_fe','amount','fee','stat_cr','stat_fe','transfer_type','type',
                 'to_receive_ini', 'to_receive_bank','to_reimbur','to_reimbur_cash','to_end','to_send',
                 'send_at', 'cr_received_date', 'money_back_date', 'reimbursement_date', 'paid_at','charge_moment','moderated_at','reason',
-                'category','from_date','to_date', 'recovery_status','updated_at','reco_creation','reco_last_update','updated_at_y',
+                'category','from_date','to_date', 'recovery_status','updated_at','reco_creation','reco_last_update','updated_at_fe',
                 'Mes_created_at','cash_request_received_date'] 
         df_jo= df_jo[order]
-
 
         df_jall = df_jo.copy()
             
         # Eliminar
         #df_jo = df_jo.drop(columns=['updated_at'])
         #df_jo = df_jo.drop(columns=['recovery_status'])
-        df_jo = df_jo.drop(columns=['reco_creation'])
-        df_jo = df_jo.drop(columns=['reco_last_update'])
+        #df_jo = df_jo.drop(columns=['reco_creation'])
+        #df_jo = df_jo.drop(columns=['reco_last_update'])
         #df_jo = df_jo.drop(columns=['id_y'])
         #df_jo = df_jo.drop(columns=['cash_request_id'])
         #df_jo = df_jo.drop(columns=['reason'])
         #df_jo = df_jo.drop(columns=['created_at_y'])
-        df_jo = df_jo.drop(columns=['updated_at_y'])
+        #df_jo = df_jo.drop(columns=['updated_at_y'])
 
         '''
             id_x                        32094 non-null  int64         
@@ -435,6 +448,23 @@ class Manager:
         cls.add_df(df_jo,"df_jo")
         cls.add_df(df_jall,"df_jall")
         #print(df_jo.info())        
+
+    @classmethod
+    def calc_columns(cls):
+        '''
+        '''
+        df_jo = cls.get_df("df_jo")
+        df_jo['n_fees'] = df_jo.query(
+        'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
+            ['created_at','created_at_fe']).groupby(
+                ['user_id'])['fee'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
+
+        df_jo['n_backs'] = df_jo.query('stat_cr == "money_back"').sort_values(
+                ['created_at','created_at_fe']).groupby(
+                    ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
+        df_jo['n_fees'] = df_jo['n_fees'].fillna(0).astype(int)
+        df_jo['n_backs'] = df_jo['n_backs'].fillna(0).astype(int)
+        cls.add_df(df_jo,"df_jo")
 
     @classmethod
     def filter_data(cls, df_name, **conditions):
