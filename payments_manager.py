@@ -82,7 +82,7 @@ class Manager:
                     print("Debug: Res a fer, les dades ja estan carrgades als datafames.")
             else:    
                 self.load_data(cr_path, fe_path)
-                self.format_data()
+                self.format_data()                
                 self.calc_columns()
 
     @classmethod
@@ -139,6 +139,66 @@ class Manager:
         except Exception as e:
             print(f"Error al cargar el archivo: {e} {e.__traceback__}")
             print(f"line: {e.__traceback__.tb_lineno} tb_frame: {e.__traceback__.tb_frame} ")
+
+    #@classmethod
+    def fill_empty_data(df):
+        #### Calcular la medias:
+        #* 2,94 dias de demora promedio en las transferencias bancarias
+        #* 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+
+        # pd.options.display.max_columns = None
+        # df = pm.df('df_jo')
+        # # Calcular la medias:
+
+        # # 2,94 dias de demora promedio en las transferencias bancarias
+        # print(df['to_receive_bank'].dt.days.mean())
+        # #x = df['to_b2b_delay'] = (df.cr_received_date-df.send_at).dt.days
+        # #display(x.notna().mean())
+        # #display(df['to_b2b_delay'])# .mean()
+
+        # # 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+        # df['to_fee_paid_delay'] = (df.paid_at -df.created_at).dt.days
+        # x =  df[(df['to_fee_paid_delay'].notna()) & (df['stat_cr'] == 'money_back')]
+        # display(x.to_fee_paid_delay.mean())
+
+
+        # pd.options.display.max_columns = None
+        # df = pm.df('df_jo')
+
+        # # send_at mirar si tiene registros faltantes.
+        # # money_back_date
+
+        # #0 registros
+        # #display(df[ (df['reimbursement_date'].isna()) & (df['stat_cr'] == 'money_back') ])
+
+
+        # #191 registros
+        # #display(df[ ((df['reimbursement_date'].isna()) | (df['money_back_date'].isna())) & (df['stat_cr'] == 'money_back') ])
+
+        # #191 Normalizamos:
+        # display(df[ (df['money_back_date'].isna()) & (df['stat_cr'] == 'money_back') ])
+        # df['money_back_date'] = df.apply(
+        #             lambda row: row['reimbursement_date']             
+        #             if ( pd.isna(row['money_back_date']) & (row['stat_cr'] == 'money_back') ) 
+        #             else row['money_back_date'], axis=1)
+        # display(df[ (df['money_back_date'].isna()) & (df['stat_cr'] == 'money_back') ])
+
+        # # 838  registros
+        # #display(df[ (df['reimbursement_date'].notna()) & (df['money_back_date'].notna() & (df['stat_cr'] != 'money_back') )])#.head(5).reset_index()
+
+
+        # Rellenamos datos faltantes
+        df['money_back_date'] = df.apply(
+                    lambda row: row['reimbursement_date'] 
+                    if ( pd.isna(row['money_back_date']) & (row['status'] == 'money_back') ) 
+                    else row['money_back_date'], axis=1
+                )
+        # Rellenamos datos faltantes
+        df['cash_request_received_date'] = df.apply(
+            lambda row: row['send_at']+ pd.DateOffset(days=3) 
+            if ( pd.isna(row['cash_request_received_date']) & (row['status'] == 'money_back') ) 
+            else row['cash_request_received_date'], axis=1
+        )     
 
     @classmethod
     def format_data(cls):
@@ -202,6 +262,7 @@ class Manager:
         cr_cp.drop(cr_cp[cr_cp['created_at'] > cr_cp['money_back_date']].index, inplace=True)
         cr_cp.drop(cr_cp[cr_cp['created_at'] > cr_cp['reimbursement_date']].index, inplace=True)
 
+        cls.fill_empty_data(cr_cp)
 
         #cr_cp.info()
         #display(cr_cp)
@@ -220,7 +281,7 @@ class Manager:
                 fe_cp[col] = fe_cp[col].dt.tz_localize(None)  # Elimina la informació de zona horària
         #fe_cp.info()
 
-
+        # Calculos de fechas en CR_CP
         # Tiempo que tarda en recibir el dinero el usuario desde la primera accion.
         # cr_received_date  (cash_request_received_date) = ??
         cr_cp['to_receive_ini'] = cr_cp.cash_request_received_date-cr_cp.created_at
@@ -240,7 +301,6 @@ class Manager:
         # TransfType: instant send_at - created_at =? 0 dias
         # TransfType: regular send_at - created_at =? 7 dias
         cr_cp['to_send'] = cr_cp.send_at-cr_cp.created_at
-
 
 
         # Verifica duplicats a fe_cp
@@ -297,12 +357,16 @@ class Manager:
         #df_jall = df_jall.rename(columns={'cash_request_received_date': 'cr_received_date'})
         df_jo['cr_received_date'] = df_jo['cash_request_received_date']
 
+
+
+
+
+
         #df_jo['fee'] = df_jo['total_amount']
         df_jo = df_jo.rename(columns={'total_amount': 'fee'})
         
         df_jo['Mes_created_at'] = df_jo['created_at'].dt.to_period('M')
         
-
         # Tiempo que tarda en recibir el dinero el usuario desde la primera accion.
         # cr_received_date  (cash_request_received_date) = ??
         df_jo['to_receive_ini'] = df_jo.cash_request_received_date-df_jo.created_at
@@ -320,53 +384,11 @@ class Manager:
         #df_jo['to_reimbur_cash_de'] = (df_jo.reimbursement_date-df_jo.send_at).dt.days()
         df_jo['to_reimbur_cash_de'] = (df_jo['reimbursement_date'] - df_jo['send_at']).dt.days
 
-
-
-
-
-
-
-
-
-
         # Tiempo que la empresa presta el dinero.
         # Dedicion de money_back_date: - Date where the CR was "considered" as money back. 
         #   It's either the paid_by_card date or 
         #   the date were we considered that's the direc debit "have low odds to be rejected" (based on business rules) 
         df_jo['to_end'] = df_jo.reimbursement_date-df_jo.money_back_date
-
-
-        #### Calcular la medias:
-        #* 2,94 dias de demora promedio en las transferencias bancarias
-        #* 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
-
-        # pd.options.display.max_columns = None
-        # df = pm.df('df_jo')
-        # # Calcular la medias:
-
-        # # 2,94 dias de demora promedio en las transferencias bancarias
-        # print(df['to_receive_bank'].dt.days.mean())
-        # #x = df['to_b2b_delay'] = (df.cr_received_date-df.send_at).dt.days
-        # #display(x.notna().mean())
-        # #display(df['to_b2b_delay'])# .mean()
-
-        # # 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
-        # df['to_fee_paid_delay'] = (df.paid_at -df.created_at).dt.days
-        # x =  df[(df['to_fee_paid_delay'].notna()) & (df['stat_cr'] == 'money_back')]
-        # display(x.to_fee_paid_delay.mean())
-
-
-
-
-
-
-
-
-
-
-
-
-
         #* Demora:
         #df['to_delay'] = df_jo.money_back_date-df_jo.reimbursement_date
 
@@ -376,18 +398,10 @@ class Manager:
         df_jo['to_send'] = df_jo.send_at-df_jo.created_at
 
 
-        # Rellenamos datos faltantes
-        df_jo['money_back_date'] = df_jo.apply(
-                    lambda row: row['reimbursement_date'] 
-                    if ( pd.isna(row['money_back_date']) & (row['stat_cr'] == 'money_back') ) 
-                    else row['money_back_date'], axis=1
-                )
-        # Rellenamos datos faltantes
-        df_jo['cr_received_date'] = df_jo.apply(
-            lambda row: row['send_at']+ pd.DateOffset(days=3) 
-            if ( pd.isna(row['cr_received_date']) & (row['stat_cr'] == 'money_back') ) 
-            else row['cr_received_date'], axis=1
-        )
+
+
+
+
 
         order = ['id_cr','id_fe', 'fe_cr_id','user_id','active', 'created_at','created_at_fe','amount','fee','stat_cr','stat_fe','transfer_type','type',
                 'to_receive_ini', 'to_receive_bank','to_reimbur','to_reimbur_cash','to_end','to_send',
@@ -480,7 +494,7 @@ class Manager:
         df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
 
         cls.add_df(df_jo,"df_jo")
-
+   
 
     @classmethod
     def filter_data(cls, df_name, **conditions):
