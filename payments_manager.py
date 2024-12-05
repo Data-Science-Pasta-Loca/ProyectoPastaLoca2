@@ -479,9 +479,12 @@ class Manager:
         # Determinar el dia de la semana de CR created_at
         df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
 
+        # Rellenar NaN de stat_fe por cr regulares
+        df_jo['stat_fe'] = df_jo['stat_fe'].fillna('cr_regular')
+
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
-        good_fe = ['confirmed', 'accepted']
+        good_fe = ['confirmed', 'accepted', 'cr_regular']
         df_jo['good_user'] = (df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe))
 
         cls.add_df(df_jo,"df_jo")
