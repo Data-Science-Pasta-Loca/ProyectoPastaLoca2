@@ -252,8 +252,9 @@ class Manager:
          # Convertir a INT i treure els nulls, deixant el valor a 0. 
         cr_cp['user_id'] = cr_cp['user_id'].fillna(0).astype(int)
         
-        cr_cp['recovery_status'] = cr_cp['recovery_status'].fillna('nice')#.astype(int)
-        fe_cp['category'] = fe_cp['category'].fillna('nice')#.astype(int)
+        # TODO OK: això sembla que no cal ? Si que cal per la join !!
+        cr_cp['recovery_status'] = cr_cp['recovery_status'].fillna('nice')
+        fe_cp['category'] = fe_cp['category'].fillna('nice')
 
         # errors = cr_cp[(cr_cp['created_at']> cr_cp['money_back_date']) | 
         #       (cr_cp['created_at'] > cr_cp['reimbursement_date'])]
@@ -316,8 +317,10 @@ class Manager:
         df_jo = pd.merge(cr_cp, fe_cp, left_on='id', right_on='cash_request_id', how ="left") #inner       
         #df_jo.info()
 
-        # TODO això sembla que no cal
-        df_jo['type'] = df_jo['type'].fillna('nice')
+        # TODO OK: això sembla que no cal ? Si que cal per la join !!
+        # Podriamos modificamos el valor 'nice' a 'cr_no_fee' para ser mas claros, pero luego usarlos sera mas dificil. 
+        # LO PODEMOS COMENTAR EN EQUIPO.
+        df_jo['type'] = df_jo['type'].fillna('nice') 
 
         # Añadir la columna 'active': 1 si deleted_account_id es NaN, de lo contrario 0
         df_jo['active'] = df_jo['deleted_account_id'].apply(lambda x: 1 if pd.isna(x) else 0)
@@ -509,19 +512,29 @@ class Manager:
     def calc_columns(cls):
         '''
         '''
-
-        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back y numero de feeds
         df_jo = cls.get_df("df_jo")
+
+        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
         df_jo['n_fees'] = df_jo.query(
         'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
             ['created_at','created_at_fe']).groupby(
                 ['user_id'])['fee'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
 
+        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back
         df_jo['n_backs'] = df_jo.query('stat_cr == "money_back"').sort_values(
                 ['created_at','created_at_fe']).groupby(
                     ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
+        
+        # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.
+        df_jo['n_recovery'] = df_jo.query('recovery_status != "nice"').sort_values(
+            ['created_at','created_at_fe']).groupby(
+                ['user_id'])['id_cr'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
+        
         df_jo['n_fees'] = df_jo['n_fees'].fillna(0).astype(int)
         df_jo['n_backs'] = df_jo['n_backs'].fillna(0).astype(int)
+        df_jo['n_recovery'] = df_jo['n_recovery'].fillna(0).astype(int)
+
+
 
         # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
         # de 7 a 14 mañana, 
@@ -541,8 +554,17 @@ class Manager:
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
+        df_jo['needs_m_check'] = (~(
+            (df_jo['stat_cr'].isin(good_cr)) & 
+            (df_jo['stat_fe'].isin(good_fe))
+            )).astype(int)
+        
         no_incident_cr_reco = ['nice']
-        df_jo['needs_m_check'] = (~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe)) & (df_jo['recovery_status'].isin(no_incident_cr_reco)))).astype(int)
+        df_jo['needs_m_check_recov'] = (~(
+            (df_jo['stat_cr'].isin(good_cr)) & 
+            (df_jo['stat_fe'].isin(good_fe)) & 
+            (df_jo['recovery_status'].isin(no_incident_cr_reco))
+            )).astype(int)
 
         cls.add_df(df_jo,"df_jo")
    
