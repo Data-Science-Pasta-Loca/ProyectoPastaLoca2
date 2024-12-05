@@ -316,6 +316,7 @@ class Manager:
         df_jo = pd.merge(cr_cp, fe_cp, left_on='id', right_on='cash_request_id', how ="left") #inner       
         #df_jo.info()
 
+        # TODO això sembla que no cal
         df_jo['type'] = df_jo['type'].fillna('nice')
 
         # Añadir la columna 'active': 1 si deleted_account_id es NaN, de lo contrario 0
@@ -540,7 +541,8 @@ class Manager:
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
-        df_jo['needs_m_check'] = (~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe)))).astype(int)
+        no_incident_cr_reco = ['nice']
+        df_jo['needs_m_check'] = (~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe)) & (df_jo['recovery_status'].isin(no_incident_cr_reco)))).astype(int)
 
         cls.add_df(df_jo,"df_jo")
    
