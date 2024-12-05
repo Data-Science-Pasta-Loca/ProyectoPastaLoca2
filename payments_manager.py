@@ -322,8 +322,50 @@ class Manager:
 
 
 
+
+
+
+
+
+
+
         # Tiempo que la empresa presta el dinero.
+        # Dedicion de money_back_date: - Date where the CR was "considered" as money back. 
+        #   It's either the paid_by_card date or 
+        #   the date were we considered that's the direc debit "have low odds to be rejected" (based on business rules) 
         df_jo['to_end'] = df_jo.reimbursement_date-df_jo.money_back_date
+
+
+        #### Calcular la medias:
+        #* 2,94 dias de demora promedio en las transferencias bancarias
+        #* 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+
+        # pd.options.display.max_columns = None
+        # df = pm.df('df_jo')
+        # # Calcular la medias:
+
+        # # 2,94 dias de demora promedio en las transferencias bancarias
+        # print(df['to_receive_bank'].dt.days.mean())
+        # #x = df['to_b2b_delay'] = (df.cr_received_date-df.send_at).dt.days
+        # #display(x.notna().mean())
+        # #display(df['to_b2b_delay'])# .mean()
+
+        # # 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+        # df['to_fee_paid_delay'] = (df.paid_at -df.created_at).dt.days
+        # x =  df[(df['to_fee_paid_delay'].notna()) & (df['stat_cr'] == 'money_back')]
+        # display(x.to_fee_paid_delay.mean())
+
+
+
+
+
+
+
+
+
+
+
+
 
         #* Demora:
         #df['to_delay'] = df_jo.money_back_date-df_jo.reimbursement_date
@@ -411,6 +453,8 @@ class Manager:
     def calc_columns(cls):
         '''
         '''
+
+        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back y numero de feeds
         df_jo = cls.get_df("df_jo")
         df_jo['n_fees'] = df_jo.query(
         'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
@@ -422,7 +466,26 @@ class Manager:
                     ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
         df_jo['n_fees'] = df_jo['n_fees'].fillna(0).astype(int)
         df_jo['n_backs'] = df_jo['n_backs'].fillna(0).astype(int)
+
+        # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
+        # de 7 a 14 mañana, 
+        # de 14 a 21 tarde,
+        # de 21 a 6 noche
+        clasificar_hora = lambda hora: "7" if 7 <= hora.hour < 14 else ("14" if 14 <= hora.hour < 21 else "21")
+        clasificar_hora_h = lambda hora: f"{hora.hour}-Mañana" if 7 <= hora.hour < 14 else (f"{hora.hour}-Tarde" if 14 <= hora.hour < 21 else f"{hora.hour}-Noche")
+        df_jo['created_at_slot'] = df_jo['created_at'].apply(clasificar_hora)
+        df_jo['created_at_slot_h'] = df_jo['created_at'].apply(clasificar_hora_h)
+
+        # Determinar el dia de la semana de CR created_at
+        df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
+
+        # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
+        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
+        good_fe = ['confirmed', 'accepted']
+        df_jo['good_user'] = (df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe))
+
         cls.add_df(df_jo,"df_jo")
+
 
     @classmethod
     def filter_data(cls, df_name, **conditions):
