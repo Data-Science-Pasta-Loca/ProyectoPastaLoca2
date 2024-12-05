@@ -82,7 +82,7 @@ class Manager:
                     print("Debug: Res a fer, les dades ja estan carrgades als datafames.")
             else:    
                 self.load_data(cr_path, fe_path)
-                self.format_data()                
+                self.format_data()
                 self.calc_columns()
 
     @classmethod
@@ -389,6 +389,39 @@ class Manager:
         #   It's either the paid_by_card date or 
         #   the date were we considered that's the direc debit "have low odds to be rejected" (based on business rules) 
         df_jo['to_end'] = df_jo.reimbursement_date-df_jo.money_back_date
+
+
+        #### Calcular la medias:
+        #* 2,94 dias de demora promedio en las transferencias bancarias
+        #* 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+
+        # pd.options.display.max_columns = None
+        # df = pm.df('df_jo')
+        # # Calcular la medias:
+
+        # # 2,94 dias de demora promedio en las transferencias bancarias
+        # print(df['to_receive_bank'].dt.days.mean())
+        # #x = df['to_b2b_delay'] = (df.cr_received_date-df.send_at).dt.days
+        # #display(x.notna().mean())
+        # #display(df['to_b2b_delay'])# .mean()
+
+        # # 31.6: Promedio del tiempo que tarda la empresa en cobrar los fee
+        # df['to_fee_paid_delay'] = (df.paid_at -df.created_at).dt.days
+        # x =  df[(df['to_fee_paid_delay'].notna()) & (df['stat_cr'] == 'money_back')]
+        # display(x.to_fee_paid_delay.mean())
+
+
+
+
+
+
+
+
+
+
+
+
+
         #* Demora:
         #df['to_delay'] = df_jo.money_back_date-df_jo.reimbursement_date
 
@@ -398,10 +431,18 @@ class Manager:
         df_jo['to_send'] = df_jo.send_at-df_jo.created_at
 
 
-
-
-
-
+        # Rellenamos datos faltantes
+        df_jo['money_back_date'] = df_jo.apply(
+                    lambda row: row['reimbursement_date'] 
+                    if ( pd.isna(row['money_back_date']) & (row['stat_cr'] == 'money_back') ) 
+                    else row['money_back_date'], axis=1
+                )
+        # Rellenamos datos faltantes
+        df_jo['cr_received_date'] = df_jo.apply(
+            lambda row: row['send_at']+ pd.DateOffset(days=3) 
+            if ( pd.isna(row['cr_received_date']) & (row['stat_cr'] == 'money_back') ) 
+            else row['cr_received_date'], axis=1
+        )
 
         order = ['id_cr','id_fe', 'fe_cr_id','user_id','active', 'created_at','created_at_fe','amount','fee','stat_cr','stat_fe','transfer_type','type',
                 'to_receive_ini', 'to_receive_bank','to_reimbur','to_reimbur_cash','to_end','to_send',
@@ -492,6 +533,14 @@ class Manager:
 
         # Determinar el dia de la semana de CR created_at
         df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
+
+        # Rellenar NaN de stat_fe por cr regulares
+        df_jo['stat_fe'] = df_jo['stat_fe'].fillna('cr_regular')
+
+        # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
+        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
+        good_fe = ['confirmed', 'accepted', 'cr_regular']
+        df_jo['needs_m_check'] = ~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe))).astype(int)
 
         cls.add_df(df_jo,"df_jo")
    
