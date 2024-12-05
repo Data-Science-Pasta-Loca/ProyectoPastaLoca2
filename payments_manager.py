@@ -540,7 +540,7 @@ class Manager:
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
-        df_jo['needs_m_check'] = ~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe))).astype(int)
+        df_jo['needs_m_check2'] = (~((df_jo['stat_cr'].isin(good_cr)) & (df_jo['stat_fe'].isin(good_fe)))).astype(int)
 
         cls.add_df(df_jo,"df_jo")
    
