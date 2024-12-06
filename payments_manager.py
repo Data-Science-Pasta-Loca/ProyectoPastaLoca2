@@ -546,7 +546,7 @@ class Manager:
         df['n_backs'] = df.query('stat_cr == "money_back"').sort_values(
                 ['created_at','created_at_fe']).groupby(
                     ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
-        
+
         # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.
         df['n_recovery'] = df.query('recovery_status != "nice"').sort_values(
             ['created_at','created_at_fe']).groupby(
@@ -556,6 +556,15 @@ class Manager:
         df['n_backs'] = df['n_backs'].fillna(0).astype(int)
         df['n_recovery'] = df['n_recovery'].fillna(0).astype(int)
 
+
+        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
+        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
+        good_fe = ['confirmed', 'accepted', 'cr_regular']
+        df['n_incidents'] = df.query(
+        'stat_cr not in @good_cr | stat_fe not in @good_fe ').sort_values(
+            ['created_at','created_at_fe']).groupby(
+                ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
+        df['n_incidents'] = df['n_incidents'].fillna(0).astype(int)
 
 
         # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
