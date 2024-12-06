@@ -580,8 +580,22 @@ class Manager:
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
         df = df.sort_values(['created_at','created_at_fe'])
-        df['n_backs'] = (df['stat_cr'] == "money_back") & (df['type'] == "nice") & (df['amount'] > 0)
-        df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
+        unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
+        df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
+
+        #df = df.drop(columns=['n_backs'])
+        #df['n_backs'] = (df['stat_cr'] == "money_back")  & (df['amount'] > 0)
+        #df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
+
+        # #df['n_backs'] = 0
+        # #df.loc[unique_cr, 'n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
+
+        #df['n_backs'] = df['n_backs'].where(df['stat_cr'] == "money_back", -1)
+        #df['n_backs'] = df.drop_duplicates(subset=['user_id', 'id_cr']).groupby('user_id').cumcount() + 1
+        #df['n_backs'] = df.groupby('user_id')['id_cr'].transform('nunique')
+        #df['n_backs'] = df.groupby('user_id')['n_backs'].fillna(method='ffill')
+
+
 
         # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
         df = df.sort_values(['created_at','created_at_fe'])
