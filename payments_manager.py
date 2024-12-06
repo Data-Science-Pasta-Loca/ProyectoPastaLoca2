@@ -160,6 +160,7 @@ class Manager:
         df['to_send'] = pd.to_timedelta(df['to_send']).round(time_format)
 
         df['money_back_date'] = df['money_back_date'].dt.to_period(time_format).dt.to_timestamp()
+        df['reimbursement_date'] = df['reimbursement_date'].dt.to_period(time_format).dt.to_timestamp()
         df['send_at'] = df['send_at'].dt.to_period(time_format).dt.to_timestamp()
         df['paid_at'] = df['paid_at'].dt.to_period(time_format).dt.to_timestamp()
         df['moderated_at'] = df['moderated_at'].dt.to_period(time_format).dt.to_timestamp()
@@ -228,7 +229,8 @@ class Manager:
             lambda row: row['send_at']+ pd.DateOffset(days=3) 
             if ( pd.isna(row['cash_request_received_date']) & (row['status'] == 'money_back') ) 
             else row['cash_request_received_date'], axis=1
-        )     
+        )
+        return df
 
     @classmethod
     def format_data(cls):
@@ -351,6 +353,8 @@ class Manager:
         # Podriamos modificamos el valor 'nice' a 'cr_no_fee' para ser mas claros, pero luego usarlos sera mas dificil. 
         # LO PODEMOS COMENTAR EN EQUIPO.
         df_jo['type'] = df_jo['type'].fillna('nice') 
+        # Rellenar NaN de fee por 0
+        df_jo['total_amount'] = df_jo['total_amount'].fillna(0)
 
         # Añadir la columna 'active': 1 si deleted_account_id es NaN, de lo contrario 0
         df_jo['active'] = df_jo['deleted_account_id'].apply(lambda x: 1 if pd.isna(x) else 0)
@@ -475,7 +479,7 @@ class Manager:
                 'Mes_created_at','cash_request_received_date'] 
         df_jo= df_jo[order]
 
-        cls.calc_columns(df_jo)
+        df_jo = cls.calc_columns(df_jo)
 
         df_jall = df_jo.copy()
             
@@ -534,38 +538,6 @@ class Manager:
     def calc_columns(df):
         '''
         '''
-        #df_jo = cls.get_df("df_jo")
-
-        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
-        df['n_fees'] = df.query(
-        'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
-            ['created_at','created_at_fe']).groupby(
-                ['user_id'])['fee'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
-
-        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back
-        df['n_backs'] = df.query('stat_cr == "money_back"').sort_values(
-                ['created_at','created_at_fe']).groupby(
-                    ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
-
-        # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.
-        df['n_recovery'] = df.query('recovery_status != "nice"').sort_values(
-            ['created_at','created_at_fe']).groupby(
-                ['user_id'])['id_cr'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
-        
-        df['n_fees'] = df['n_fees'].fillna(0).astype(int)
-        df['n_backs'] = df['n_backs'].fillna(0).astype(int)
-        df['n_recovery'] = df['n_recovery'].fillna(0).astype(int)
-
-
-        # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
-        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
-        good_fe = ['confirmed', 'accepted', 'cr_regular']
-        df['n_incidents'] = df.query(
-        'stat_cr not in @good_cr | stat_fe not in @good_fe ').sort_values(
-            ['created_at','created_at_fe']).groupby(
-                ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
-        df['n_incidents'] = df['n_incidents'].fillna(0).astype(int)
-
 
         # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
         # de 7 a 14 mañana, 
@@ -597,8 +569,34 @@ class Manager:
             (df['recovery_status'].isin(no_incident_cr_reco))
             )).astype(int)
 
+
+
+
+        # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
+        #df = df.drop(columns=['n_fees'])
+        df = df.sort_values(['created_at','created_at_fe'])
+        df['n_fees'] = (df['stat_cr'] == "money_back") & (df['stat_fe'] == "accepted") & (df['fee'] > 0)
+        df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
+
+        # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
+        df = df.sort_values(['created_at','created_at_fe'])
+        df['n_backs'] = (df['stat_cr'] == "money_back") & (df['type'] == "nice") & (df['amount'] > 0)
+        df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
+
+        # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
+        df = df.sort_values(['created_at','created_at_fe'])
+        df['n_recovery'] = (df['recovery_status'] != "nice") & (df['amount'] > 0)
+        df['n_recovery'] = df.groupby('user_id')['n_recovery'].cumsum()
+
+        # # Para stat_cr != good_cr | stat_fe != good_fe acumulamos el numero de operaciones de tipo money_back
+        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
+        good_fe = ['confirmed', 'accepted', 'cr_regular']        
+        df = df.sort_values(['created_at','created_at_fe'])
+        df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
+        df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
+
         #cls.add_df(df_jo,"df_jo")
-   
+        return df
 
     @classmethod
     def filter_data(cls, df_name, **conditions):
