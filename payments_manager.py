@@ -49,6 +49,9 @@ def get_map_list(expression, my_list):
     #print(cuadrados)  # [1, 4, 9, 16, 25]
     return list(map(expression, my_list))
 
+def format_to_dates(df, time_format ='d'): # 'min','s'
+    return Manager.format_to_dates(df, time_format)
+
 class Manager:            
     debug = None
     dataframes = {}
@@ -82,8 +85,7 @@ class Manager:
                     print("Debug: Res a fer, les dades ja estan carrgades als datafames.")
             else:    
                 self.load_data(cr_path, fe_path)
-                self.format_data()
-                self.calc_columns()
+                self.format_data()                
 
     @classmethod
     def get_df(cls, name='df'):
@@ -139,6 +141,34 @@ class Manager:
         except Exception as e:
             print(f"Error al cargar el archivo: {e} {e.__traceback__}")
             print(f"line: {e.__traceback__.tb_lineno} tb_frame: {e.__traceback__.tb_frame} ")
+
+    @classmethod
+    def format_to_dates(cls, df, time_format = 'd'): # 'min','s'
+        #df_jo = df_jo.copy()
+        df['created_at'] = df['created_at'].dt.to_period(time_format).dt.to_timestamp()
+        df['created_at_fe'] = df['created_at_fe'].dt.to_period(time_format).dt.to_timestamp()
+        df['updated_at'] = df['updated_at'].dt.to_period(time_format).dt.to_timestamp()
+        df['updated_at_fe'] = df['updated_at_fe'].dt.to_period(time_format).dt.to_timestamp()
+
+        df['to_receive_ini'] = pd.to_timedelta(df['to_receive_ini']).round(time_format)
+        #df['to_receive_ini'] = df['to_receive_ini'].timedelta(seconds=math.ceil(df['to_receive_ini'].total_seconds()))
+
+        df['to_receive_bank'] = pd.to_timedelta(df['to_receive_bank']).round(time_format)
+        df['to_reimbur'] = pd.to_timedelta(df['to_reimbur']).round(time_format)
+        df['to_reimbur_cash'] = pd.to_timedelta(df['to_reimbur_cash']).round(time_format)
+        df['to_end'] = pd.to_timedelta(df['to_end']).round(time_format)
+        df['to_send'] = pd.to_timedelta(df['to_send']).round(time_format)
+
+        df['money_back_date'] = df['money_back_date'].dt.to_period(time_format).dt.to_timestamp()
+        df['send_at'] = df['send_at'].dt.to_period(time_format).dt.to_timestamp()
+        df['paid_at'] = df['paid_at'].dt.to_period(time_format).dt.to_timestamp()
+        df['moderated_at'] = df['moderated_at'].dt.to_period(time_format).dt.to_timestamp()
+        df['from_date'] = df['from_date'].dt.to_period(time_format).dt.to_timestamp()
+        df['to_date'] = df['to_date'].dt.to_period(time_format).dt.to_timestamp()
+
+        df['reco_creation'] = df['reco_creation'].dt.to_period(time_format).dt.to_timestamp()
+        df['reco_last_update'] = df['reco_last_update'].dt.to_period(time_format).dt.to_timestamp()
+        #display(df_jo.head(5))
 
     #@classmethod
     def fill_empty_data(df):
@@ -416,16 +446,6 @@ class Manager:
 
 
 
-
-
-
-
-
-
-
-
-
-
         #* Demora:
         #df['to_delay'] = df_jo.money_back_date-df_jo.reimbursement_date
 
@@ -454,6 +474,8 @@ class Manager:
                 'category','from_date','to_date', 'recovery_status','updated_at','reco_creation','reco_last_update','updated_at_fe',
                 'Mes_created_at','cash_request_received_date'] 
         df_jo= df_jo[order]
+
+        cls.calc_columns(df_jo)
 
         df_jall = df_jo.copy()
             
@@ -508,31 +530,31 @@ class Manager:
         cls.add_df(df_jall,"df_jall")
         #print(df_jo.info())        
 
-    @classmethod
-    def calc_columns(cls):
+    #@classmethod
+    def calc_columns(df):
         '''
         '''
-        df_jo = cls.get_df("df_jo")
+        #df_jo = cls.get_df("df_jo")
 
         # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
-        df_jo['n_fees'] = df_jo.query(
+        df['n_fees'] = df.query(
         'stat_cr == "money_back" & stat_fe == "accepted" ').sort_values(
             ['created_at','created_at_fe']).groupby(
                 ['user_id'])['fee'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
 
         # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back
-        df_jo['n_backs'] = df_jo.query('stat_cr == "money_back"').sort_values(
+        df['n_backs'] = df.query('stat_cr == "money_back"').sort_values(
                 ['created_at','created_at_fe']).groupby(
                     ['user_id'])['amount'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
         
         # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.
-        df_jo['n_recovery'] = df_jo.query('recovery_status != "nice"').sort_values(
+        df['n_recovery'] = df.query('recovery_status != "nice"').sort_values(
             ['created_at','created_at_fe']).groupby(
                 ['user_id'])['id_cr'].transform(lambda x: (x>0).cumsum()).fillna(0).astype(int)
         
-        df_jo['n_fees'] = df_jo['n_fees'].fillna(0).astype(int)
-        df_jo['n_backs'] = df_jo['n_backs'].fillna(0).astype(int)
-        df_jo['n_recovery'] = df_jo['n_recovery'].fillna(0).astype(int)
+        df['n_fees'] = df['n_fees'].fillna(0).astype(int)
+        df['n_backs'] = df['n_backs'].fillna(0).astype(int)
+        df['n_recovery'] = df['n_recovery'].fillna(0).astype(int)
 
 
 
@@ -542,31 +564,31 @@ class Manager:
         # de 21 a 6 noche
         clasificar_hora = lambda hora: "7" if 7 <= hora.hour < 14 else ("14" if 14 <= hora.hour < 21 else "21")
         clasificar_hora_h = lambda hora: f"{hora.hour}-Mañana" if 7 <= hora.hour < 14 else (f"{hora.hour}-Tarde" if 14 <= hora.hour < 21 else f"{hora.hour}-Noche")
-        df_jo['created_at_slot'] = df_jo['created_at'].apply(clasificar_hora)
-        df_jo['created_at_slot_h'] = df_jo['created_at'].apply(clasificar_hora_h)
+        df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
+        df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
 
         # Determinar el dia de la semana de CR created_at
-        df_jo['created_at_dow'] = df_jo['created_at'].dt.dayofweek
+        df['created_at_dow'] = df['created_at'].dt.dayofweek
 
         # Rellenar NaN de stat_fe por cr regulares
-        df_jo['stat_fe'] = df_jo['stat_fe'].fillna('cr_regular')
+        df['stat_fe'] = df['stat_fe'].fillna('cr_regular')
 
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
-        df_jo['needs_m_check'] = (~(
-            (df_jo['stat_cr'].isin(good_cr)) & 
-            (df_jo['stat_fe'].isin(good_fe))
+        df['needs_m_check'] = (~(
+            (df['stat_cr'].isin(good_cr)) & 
+            (df['stat_fe'].isin(good_fe))
             )).astype(int)
         
         no_incident_cr_reco = ['nice']
-        df_jo['needs_m_check_recov'] = (~(
-            (df_jo['stat_cr'].isin(good_cr)) & 
-            (df_jo['stat_fe'].isin(good_fe)) & 
-            (df_jo['recovery_status'].isin(no_incident_cr_reco))
+        df['needs_m_check_recov'] = (~(
+            (df['stat_cr'].isin(good_cr)) & 
+            (df['stat_fe'].isin(good_fe)) & 
+            (df['recovery_status'].isin(no_incident_cr_reco))
             )).astype(int)
 
-        cls.add_df(df_jo,"df_jo")
+        #cls.add_df(df_jo,"df_jo")
    
 
     @classmethod
