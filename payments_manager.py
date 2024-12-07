@@ -683,7 +683,7 @@ class Manager:
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
         #df = df.drop(columns=['n_fees'])
-        df = df.sort_values(['created_at','created_at_fe'])
+        df = df.sort_values(['created_at_fe'])
         df['n_fees'] = (df['stat_cr'] == "money_back") & (df['stat_fe'] == "accepted") & (df['fee'] > 0)
         df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
 
