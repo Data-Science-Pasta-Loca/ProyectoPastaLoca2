@@ -621,11 +621,6 @@ class Manager:
         df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
-<<<<<<< HEAD
-        df = df.sort_values(['created_at'])
-        df['n_backs'] = (df['stat_cr'] == "money_back") & (df['amount'] > 0)
-        df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
-=======
         df = df.sort_values(['created_at','created_at_fe'])
         unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
         df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
@@ -643,7 +638,6 @@ class Manager:
         #df['n_backs'] = df.groupby('user_id')['n_backs'].fillna(method='ffill')
 
 
->>>>>>> cf73029577ff71f60194f767d3ed2cce5af1b4b1
 
         # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
         df = df.sort_values(['created_at','created_at_fe'])
