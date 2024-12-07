@@ -574,13 +574,13 @@ class Manager:
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
         #df = df.drop(columns=['n_fees'])
-        df = df.sort_values(['created_at','created_at_fe'])
+        df = df.sort_values(['created_at_fe'])
         df['n_fees'] = (df['stat_cr'] == "money_back") & (df['stat_fe'] == "accepted") & (df['fee'] > 0)
         df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
-        df = df.sort_values(['created_at','created_at_fe'])
-        df['n_backs'] = (df['stat_cr'] == "money_back") & (df['type'] == "nice") & (df['amount'] > 0)
+        df = df.sort_values(['created_at'])
+        df['n_backs'] = (df['stat_cr'] == "money_back") & (df['amount'] > 0)
         df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
 
         # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
