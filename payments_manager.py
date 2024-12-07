@@ -22,8 +22,10 @@ def help():
     av.add(df,"df_name")
     """)
     
-def init(csv_cr="./data/extract - cash request - data analyst.csv", csv_fe ="./data/extract - fees - data analyst - .csv", debug=True):
-    Manager(csv_cr, csv_fe)
+def init(csv_cr = "./data/extract - cash request - data analyst.csv", 
+         csv_fe = "./data/extract - fees - data analyst - .csv",
+         csv_ex = "./data/divisa_exogenas.csv", debug=True):
+    Manager(csv_cr, csv_fe, csv_ex)
 
 def df(name):
     return Manager.get_df(name)
@@ -70,7 +72,8 @@ class Manager:
 
     @classmethod
     def __init__(self, cr_path='./data/extract - cash request - data analyst.csv',
-                  fe_path='./data/extract - fees - data analyst - .csv', debug=False):
+                  fe_path='./data/extract - fees - data analyst - .csv',
+                  ex_path ='./data/divisa_exogenas.csv', debug=False):
         """
         Inicializa la clase DatasetLoader.
         
@@ -84,8 +87,9 @@ class Manager:
                 if debug:
                     print("Debug: Res a fer, les dades ja estan carrgades als datafames.")
             else:    
-                self.load_data(cr_path, fe_path)
-                self.format_data()                
+                self.load_data(cr_path, fe_path, ex_path)
+                self.format_data()
+                self.exogen_data()
 
     @classmethod
     def get_df(cls, name='df'):
@@ -111,7 +115,7 @@ class Manager:
         return cls.dataframes.get(name, None).sort_values(columns, ascending= ascending)
 
     @classmethod
-    def load_data(cls, cr_path, fe_path):
+    def load_data(cls, cr_path, fe_path, ex_path):
         """
         Carga un dataset desde archivos CSV.
         
@@ -124,11 +128,18 @@ class Manager:
         if not os.path.exists(fe_path):
             print(f"Error: El archivo '{fe_path}' no existe.")
             return
+        if not os.path.exists(ex_path):
+            print(f"Error: El archivo '{ex_path}' no existe.")
+            return
         try:
             cr = pd.read_csv(cr_path)
             cls.add_df(cr,"cr")
+            
             fe = pd.read_csv(fe_path)
             cls.add_df(fe,"fe")
+            
+            ex = pd.read_csv(ex_path)
+            cls.add_df(ex,"ex")
 
             if cls.debug:
                 print(f"Dataset {cr_path} cargado correctamente.")
@@ -231,6 +242,68 @@ class Manager:
             else row['cash_request_received_date'], axis=1
         )
         return df
+
+    @classmethod
+    def exogen_data(cls):
+        ex_cp = cls.get_df("ex")
+        df_jo = cls.get_df('df_jo')
+
+        ex_cp['Date'] = pd.to_datetime(ex_cp['Date'],format='ISO8601')
+        ex_cp['Date'] = ex_cp['Date'].dt.date
+        df_jo['created_at_d'] = pd.to_datetime(df_jo['created_at'])
+        df_jo['created_at_d'] = df_jo['created_at_d'].dt.date
+        df_jo = pd.merge(df_jo, ex_cp, left_on='created_at_d', right_on='Date', how ="left") #inner
+        df_jo = df_jo.drop(columns=['Date'])
+        df_jo = df_jo.rename(columns={'GBP to EUR': 'GBP_EUR', 'BTC to GBP': 'BTC_GBP'})
+
+        #Fuente: https://www.statista.com/statistics/306648/inflation-rate-consumer-price-index-cpi-united-kingdom-uk/
+        data = {
+            'Date': ['11-2019', '12-2019', '01-2020', '02-2020', '03-2020', '04-2020', '05-2020', 
+                     '06-2020', '07-2020', '08-2020', '09-2020', '10-2020', '11-2020'],
+            'inflation': [1.3, 1.3, 1.8, 1.7, 1.5, 0.8, 0.5, 0.6, 1.0, 0.2, 0.5, 0.7, 0.7] 
+            }
+
+        # DataFrame original con datos diarios
+        #data_daily = pd.DataFrame({'Date': pd.date_range(start='2019-12-01', end='2020-10-31', freq='D')})
+        data_inflation = pd.DataFrame(data)
+
+        # Convertir la columna 'Date' a tipo datetime con formato mensual
+        data_inflation['Date'] = pd.to_datetime(data_inflation['Date'], format='%m-%Y')
+
+        # Crear un rango de fechas que abarque el mes correspondiente para cada fila
+        data_inflation = data_inflation.set_index('Date').resample('D').ffill().reset_index()
+
+        # Renombrar columna a 'Inflation (%)'
+        data_inflation.rename(columns={'index': 'Date'}, inplace=True)
+        data_inflation['Date'] = data_inflation['Date'].dt.date
+
+        # Unir ambos DataFrames por la columna de fecha
+        df_jo = pd.merge(df_jo, data_inflation, left_on='created_at_d', right_on='Date', how='left')
+
+        #Fuente: https://www.oecd.org/en/data/indicators/unemployment-rate.html?oecdcontrol-59006032fa-var1=GBR&oecdcontrol-4c072e451c-var3=2020-10
+        data = {
+            'Date': ['11-2019', '12-2019', '01-2020', '02-2020', '03-2020', '04-2020', '05-2020', 
+                     '06-2020', '07-2020', '08-2020', '09-2020', '10-2020', '11-2020'],
+            'unemploy_rate': [4.0, 4.0, 4.1, 4.1, 4.2, 4.2, 4.2, 4.4, 4.7, 5.0, 5.2, 5.2, 5.2]
+            }
+        data_inflation = pd.DataFrame(data)
+
+        # Convertir la columna 'Date' a tipo datetime con formato mensual
+        data_inflation['Date'] = pd.to_datetime(data_inflation['Date'], format='%m-%Y')
+
+        # Crear un rango de fechas que abarque el mes correspondiente para cada fila
+        data_inflation = data_inflation.set_index('Date').resample('D').ffill().reset_index()
+
+        # Renombrar columna a 'Inflation (%)'
+        data_inflation.rename(columns={'index': 'Date'}, inplace=True)
+        data_inflation['Date'] = data_inflation['Date'].dt.date
+
+        # Unir ambos DataFrames por la columna de fecha
+        df_jo = pd.merge(df_jo, data_inflation, left_on='created_at_d', right_on='Date', how='left')
+        
+        df_jo = df_jo.drop(columns=['Date_x'])
+        df_jo = df_jo.drop(columns=['Date_y'])
+        cls.add_df(df_jo,"df_jo")
 
     @classmethod
     def format_data(cls):
@@ -347,6 +420,9 @@ class Manager:
         #display(fe_cp[['id','cash_request_id']])
         #df_jo = pd.merge(cr_cp, fe_cp,  on=['id','cash_request_id'], how ="left")
         df_jo = pd.merge(cr_cp, fe_cp, left_on='id', right_on='cash_request_id', how ="left") #inner       
+        
+        #ex_cp = fe_cp = cls.get_df("ex").copy()
+        #df_jo = pd.merge(df_jo, ex_cp, left_on='created_at', right_on='Date', how ="left") #inner       
         #df_jo.info()
 
         # TODO OK: això sembla que no cal ? Si que cal per la join !!
@@ -494,40 +570,6 @@ class Manager:
         #df_jo = df_jo.drop(columns=['created_at_y'])
         #df_jo = df_jo.drop(columns=['updated_at_y'])
 
-        '''
-            id_x                        32094 non-null  int64         
-        1   amount                      32094 non-null  float64       
-        2   status_x                    32094 non-null  object        
-        3   created_at_x                32094 non-null  datetime64[ns]
-        4   updated_at_x                32094 non-null  datetime64[ns]
-        5   user_id                     32094 non-null  int64         
-        (pasar de qualitativo a quant.) 6   moderated_at                21530 non-null  datetime64[ns]
-        7   deleted_account_id          2573 non-null   float64       
-        8   reimbursement_date          4061 non-null   datetime64[ns]
-        9   cash_request_received_date  24149 non-null  datetime64[ns]
-        10  money_back_date             17204 non-null  datetime64[ns]
-        11  transfer_type               32094 non-null  object        
-        12  send_at                     22370 non-null  datetime64[ns]
-        
-        13  recovery_status             7200 non-null   object        
-        14  reco_creation               7200 non-null   datetime64[ns]
-        15  reco_last_update            7200 non-null   datetime64[ns]
-        
-        16  (Mes_created_at) calculada  32094 non-null  period[M]     
-        17  id_y                        21057 non-null  float64       
-        18  cash_request_id             21057 non-null  float64       
-        19  type                        21057 non-null  object        
-        20  status_y                    21057 non-null  object        
-        21  category                    2196 non-null   object        
-        22  total_amount                21057 non-null  float64       
-        23  reason                      21057 non-null  object        
-        24  created_at_y                21057 non-null  datetime64[ns]
-        25  updated_at_y                21057 non-null  datetime64[ns]
-        26  paid_at                     15438 non-null  datetime64[ns]
-        27  from_date                   6749 non-null   datetime64[ns]
-        28  to_date                     6512 non-null   datetime64[ns]
-        29  charge_moment   
-        '''
         cls.add_df(cr_cp ,"cr_cp")
         cls.add_df(fe_cp ,"fe_cp")        
         cls.add_df(df_jo,"df_jo")
@@ -579,9 +621,29 @@ class Manager:
         df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
+<<<<<<< HEAD
         df = df.sort_values(['created_at'])
         df['n_backs'] = (df['stat_cr'] == "money_back") & (df['amount'] > 0)
         df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
+=======
+        df = df.sort_values(['created_at','created_at_fe'])
+        unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
+        df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
+
+        #df = df.drop(columns=['n_backs'])
+        #df['n_backs'] = (df['stat_cr'] == "money_back")  & (df['amount'] > 0)
+        #df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
+
+        # #df['n_backs'] = 0
+        # #df.loc[unique_cr, 'n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
+
+        #df['n_backs'] = df['n_backs'].where(df['stat_cr'] == "money_back", -1)
+        #df['n_backs'] = df.drop_duplicates(subset=['user_id', 'id_cr']).groupby('user_id').cumcount() + 1
+        #df['n_backs'] = df.groupby('user_id')['id_cr'].transform('nunique')
+        #df['n_backs'] = df.groupby('user_id')['n_backs'].fillna(method='ffill')
+
+
+>>>>>>> cf73029577ff71f60194f767d3ed2cce5af1b4b1
 
         # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
         df = df.sort_values(['created_at','created_at_fe'])
