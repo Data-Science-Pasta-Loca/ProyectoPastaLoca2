@@ -3,8 +3,9 @@ import inspect
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
+import yfinance as yf
 
 # cash_request = pd.read_csv('./data/extract - cash request - data analyst.csv')
 # fees = pd.read_csv('../data/extract - fees - data analyst - .csv')
@@ -25,7 +26,7 @@ def help():
 def init(csv_cr = "./data/extract - cash request - data analyst.csv", 
          csv_fe = "./data/extract - fees - data analyst - .csv",
          csv_ex = "./data/divisa_exogenas.csv", debug=True):
-    Manager(csv_cr, csv_fe, csv_ex)
+    Manager(csv_cr, csv_fe, csv_ex, debug)
 
 def df(name):
     return Manager.get_df(name)
@@ -41,6 +42,8 @@ def info():
 
 def reset():
     Manager.dataframes = {}
+    if os.path.exists("./data/divisa_exogenas.csv"):
+        os.remove("./data/divisa_exogenas.csv")
 
 #def get_season():
 #    return Manager.get_season
@@ -128,9 +131,11 @@ class Manager:
         if not os.path.exists(fe_path):
             print(f"Error: El archivo '{fe_path}' no existe.")
             return
-        if not os.path.exists(ex_path):
-            print(f"Error: El archivo '{ex_path}' no existe.")
-            return
+        if not os.path.exists(ex_path):            
+            cls.download_exogens()
+            if not os.path.exists(ex_path):
+                print(f"Error: El archivo '{ex_path}' no existe y no se ha podido crear de nuevo.")
+                return            
         try:
             cr = pd.read_csv(cr_path)
             cls.add_df(cr,"cr")
@@ -242,6 +247,68 @@ class Manager:
             else row['cash_request_received_date'], axis=1
         )
         return df
+
+    @classmethod
+    def download_exogens(cls, save_path="./data/divisa_exogenas.csv",
+                        date_start='2019-10-01', date_end='2020-11-30'):
+        
+        def fetch_and_prepare_data(ticker, column_name):
+            """Descarga datos históricos de un ticker y los prepara con columnas específicas."""
+            data = yf.download(ticker, start=date_start, end=date_end)[['Close']].reset_index()
+            data.columns = ['Date', column_name]
+            data['Date'] = pd.to_datetime(data['Date']).dt.date
+            return data
+
+        # Descargar y preparar datos
+        exchange_rate = fetch_and_prepare_data('GBPEUR=X', 'GBP to EUR')
+        btc_gbp_data = fetch_and_prepare_data('BTC-GBP', 'BTC to GBP')
+
+        # Crear un DataFrame con todas las fechas del rango
+        daily = pd.DataFrame({'Date': pd.date_range(start=date_start, end=date_end, freq='D').date})
+        
+        # Unir datos y llenar valores faltantes con 0
+        divisa_exogenas = daily.merge(exchange_rate, on='Date', how='left').fillna(0)
+        divisa_exogenas = divisa_exogenas.merge(btc_gbp_data, on='Date', how='left').fillna(0)
+
+        # Guardar a CSV
+        divisa_exogenas.to_csv(save_path, index=False)
+
+    @classmethod
+    def download_exogens_old(cls, save_path = "./data/divisa_exogenas.csv", 
+                     date_start ='2019-10-01', date_end ='2020-11-30'):
+
+        # Define el símbolo del ticker para el par de divisas (GBP/EUR)
+        ticker = 'GBPEUR=X'
+
+        # Obtener datos históricos
+        data = yf.download(ticker, start=date_start, end=date_end)
+
+        # Mantener solo la columna 'Close' (Cierre)
+        exchange_rate = data[['Close']]
+
+        # Restablecer el índice para que 'Date' (Fecha) sea una columna
+        exchange_rate = exchange_rate.reset_index()
+
+        # Renombrar las columnas a 'Date' (Fecha) y 'GBP to EUR' (GBP a EUR)
+        exchange_rate.columns = ['Date', 'GBP to EUR']
+
+        # Define el símbolo del ticker para BTC/GBP
+        ticker = 'BTC-GBP'
+
+        # Obtener datos históricos
+        data4 = yf.download(ticker, start= date_start, end=date_end)
+
+        # Mantener solo la columna 'Close' (Cierre)
+        btc_gbp_data = data4[['Close']]
+
+        # Restablecer el índice para que 'Date' (Fecha) sea una columna
+        btc_gbp_data = btc_gbp_data.reset_index()
+
+        # Renombrar las columnas a 'Date' (Fecha) y 'BTC to GBP' (BTC a GBP)
+        btc_gbp_data.columns = ['Date', 'BTC to GBP']
+
+        divisa_exogenas = pd.merge(exchange_rate, btc_gbp_data, on='Date', how='inner')
+        divisa_exogenas.reset_index(drop=True).to_csv(save_path, index=False)
 
     @classmethod
     def exogen_data(cls):
