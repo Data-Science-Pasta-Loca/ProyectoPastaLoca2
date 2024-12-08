@@ -657,7 +657,7 @@ class Manager:
         df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
         df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
 
-        # Determinar el dia de la semana de CR created_at
+        # Determinar el dia de la semana de CR created_at (The day of the week with Monday=0, Sunday=6)
         df['created_at_dow'] = df['created_at'].dt.dayofweek
 
         # Rellenar NaN de stat_fe por cr regulares
