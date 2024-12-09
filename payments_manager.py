@@ -347,11 +347,12 @@ class Manager:
         # Unir ambos DataFrames por la columna de fecha
         df_jo = pd.merge(df_jo, data_inflation, left_on='created_at_d', right_on='Date', how='left')
 
-        #Fuente: https://www.oecd.org/en/data/indicators/unemployment-rate.html?oecdcontrol-59006032fa-var1=GBR&oecdcontrol-4c072e451c-var3=2020-10
+        #Fuente csv: https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
+        # Fuente: https://www.oecd.org/en/data/indicators/unemployment-rate.html?oecdcontrol-59006032fa-var1=GBR&oecdcontrol-4c072e451c-var3=2020-10
         data = {
             'Date': ['11-2019', '12-2019', '01-2020', '02-2020', '03-2020', '04-2020', '05-2020', 
                      '06-2020', '07-2020', '08-2020', '09-2020', '10-2020', '11-2020'],
-            'unemploy_rate': [4.0, 4.0, 4.1, 4.1, 4.2, 4.2, 4.2, 4.4, 4.7, 5.0, 5.2, 5.2, 5.2]
+            'unemploy_rate': [3.9, 4.0, 4.1, 4.1, 4.2, 4.2, 4.2, 4.4, 4.7, 5.0, 5.2, 5.2, 5.3]
             }
         data_inflation = pd.DataFrame(data)
 
@@ -495,7 +496,7 @@ class Manager:
         # TODO OK: això sembla que no cal ? Si que cal per la join !!
         # Podriamos modificamos el valor 'nice' a 'cr_no_fee' para ser mas claros, pero luego usarlos sera mas dificil. 
         # LO PODEMOS COMENTAR EN EQUIPO.
-        df_jo['type'] = df_jo['type'].fillna('nice') 
+        df_jo['type'] = df_jo['type'].fillna(0)  # quitamos el 'nice', nos da problemas al estandarizar
         # Rellenar NaN de fee por 0
         df_jo['total_amount'] = df_jo['total_amount'].fillna(0)
 
@@ -657,7 +658,7 @@ class Manager:
         df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
         df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
 
-        # Determinar el dia de la semana de CR created_at
+        # Determinar el dia de la semana de CR created_at (The day of the week with Monday=0, Sunday=6)
         df['created_at_dow'] = df['created_at'].dt.dayofweek
 
         # Rellenar NaN de stat_fe por cr regulares
