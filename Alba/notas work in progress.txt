@@ -1,0 +1,53 @@
+- Anotaciones modelos:
+
+Empezar con modelos sencillos para probar (nuestro problema es de clasificación binaria porque tiene dos clases solamente)
+
+Regresión logística y árboles de decisión
+
+Usamos métricas para evaluar los modelos y comparar
+
+Valorar si mejoramos uno de esos modelos que tiene buen desempeño (con hiperparametros o versiones avanzadas ya programadas)
+o si preferimos intentar otro modelo distinto.
+
+WoE (Weight of Evidence)
+Tenerlo presente por si nos cuadra usarlo. 
+
+Ya que dice ser comunmente usada para el analisis de riesgo de crédito y en modelos de clasificación binaria.
+
+Para regresión logística acordarnos del valor z=0,5 donde la función sigmoide tiene singularidad.
+También acordarnos que en la regresión logística hay que tener muy en cuenta el efecto de los outliers.
+Qué es más importante minimzar? 
+Falso negativo == a uno que habría que hacer manual check le ponemos que no
+Falso positivo ==  a uno que no necesita manual check le ponemos que sí
+
+
+- Búsqueda user_id que nos ayuden a estudiar los que 
+a) SÍ NECESITAN MANUAL CHECK (==NO son good user)
+b) NO NECESITAN MANUAL CHECK (==SI son good user)
+
+
+
+- Métricas posibles PastaLoca1:
+
+Dias que tarda un usuario en devolver el dinero.
+diferencia entre send_at (cuando recibe el dinero) y money_back_date (fecha en la que tenemos de vuelta el dinero)
+
+Ratio de incidentes por cohorte.
+numero de incidencias entre el numero total de entradas en fee (*100)
+
+Churn rate, para mirar porcentaje de usuarios que han deleted su account.
+numero de deleted_id entre total de user_id (*100)
+
+Total fee income por cohorte.
+mirar evolución en el tiempo
+
+Estudiar morosidad.
+los que teienen campo paid_at vacío serían morosos (hay esos 35 que lo tienen vacío pero aún asi parece que hubo transacción pero los ignoramos)
+para los morosos mirar:
+si sus cuentas son de las eliminadas
+si van a generar ingresos futuros gracias a múltiples postpone
+si estan asociados a incidencias
+
+Estudiar incidencias.
+por cohortes ver tasa incidencias.
+mirar si a más incidencias hay más/menos usuarios o ingresos
