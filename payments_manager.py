@@ -649,14 +649,16 @@ class Manager:
         '''
         '''
 
-        # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
-        # de 7 a 14 mañana, 
-        # de 14 a 21 tarde,
-        # de 21 a 6 noche
+        # # Aplicar las franjas horarias a CR created_at en nueva columna llamada 'created_at_slot' (created_at_slot_h para ver exactamente la hora)
+        # # de 7 a 14 mañana, 
+        # # de 14 a 21 tarde,
+        # # de 21 a 6 noche
         clasificar_hora = lambda hora: "7" if 7 <= hora.hour < 14 else ("14" if 14 <= hora.hour < 21 else "21")
-        clasificar_hora_h = lambda hora: f"{hora.hour}-Mañana" if 7 <= hora.hour < 14 else (f"{hora.hour}-Tarde" if 14 <= hora.hour < 21 else f"{hora.hour}-Noche")
-        df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
-        df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
+        # clasificar_hora_h = lambda hora: f"{hora.hour}-Mañana" if 7 <= hora.hour < 14 else (f"{hora.hour}-Tarde" if 14 <= hora.hour < 21 else f"{hora.hour}-Noche")
+        # df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
+        # df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
+        df['created_at_slot'] = df['created_at'].dt.hour
+        df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora)
 
         # Determinar el dia de la semana de CR created_at (The day of the week with Monday=0, Sunday=6)
         df['created_at_dow'] = df['created_at'].dt.dayofweek
