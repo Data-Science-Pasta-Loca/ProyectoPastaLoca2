@@ -658,7 +658,7 @@ class Manager:
         # df['created_at_slot'] = df['created_at'].apply(clasificar_hora)
         # df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora_h)
         df['created_at_slot'] = df['created_at'].dt.hour
-        df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora)
+        #df['created_at_slot_h'] = df['created_at'].apply(clasificar_hora)
 
         # Determinar el dia de la semana de CR created_at (The day of the week with Monday=0, Sunday=6)
         df['created_at_dow'] = df['created_at'].dt.dayofweek
@@ -669,10 +669,10 @@ class Manager:
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
-        df['needs_m_check'] = (~(
-            (df['stat_cr'].isin(good_cr)) & 
-            (df['stat_fe'].isin(good_fe))
-            )).astype(int)
+        # df['needs_m_check'] = (~(
+        #     (df['stat_cr'].isin(good_cr)) & 
+        #     (df['stat_fe'].isin(good_fe))
+        #     )).astype(int)
         
         no_incident_cr_reco = ['nice']
         df['needs_m_check_recov'] = (~(
