@@ -403,7 +403,7 @@ class Manager:
         df_hyper = df_jo[[
             'user_id',
             #'created_at', 
-            #'created_at_slot', 'created_at_dow',
+            'created_at_slot', 'created_at_dow',
             'amount',
             'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_incidents', 
             'transfer_type', 'charge_moment',
@@ -414,7 +414,7 @@ class Manager:
             #'moderated_at', 
             'n_cr_fe_w', #'n_cr_fe_m', 
             'category',
-            'inflation' #, 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
+            'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
             ]].copy()
         cls.add_df(df_hyper,"df_hyper")
 
