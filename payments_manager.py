@@ -694,7 +694,7 @@ class Manager:
         df = df.sort_values(['created_at','created_at_fe'])
         unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
         df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum() # -1 # 2024-12-11 Cesc no podemos hacer el -1 esto nos deja casos en negativo que son claramente erroneos
-
+        
         #df = df.drop(columns=['n_backs'])
         #df['n_backs'] = (df['stat_cr'] == "money_back")  & (df['amount'] > 0)
         #df['n_backs'] = df.groupby('user_id')['n_backs'].cumsum()
@@ -720,6 +720,22 @@ class Manager:
         df = df.sort_values(['created_at','created_at_fe'])
         df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
         df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
+
+        #df['n_user_cr_fe'] = df.groupby('user_id').size().reset_index(name='n_user_cr_fe')
+
+    
+        df['created_at_w'] = df['created_at'].dt.isocalendar().week
+        df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
+        df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
+        frecuencia_w = df_mb.groupby(['user_id', 'created_at_w']).size().reset_index(name='n_cr_fe_w')
+        df = pd.merge(df, frecuencia_w, on=['user_id', 'created_at_w'], how='left')
+
+        df['created_at_m'] = df['created_at'].dt.month
+        df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
+        df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
+        frecuencia_m = df_mb.groupby(['user_id', 'created_at_m']).size().reset_index(name='n_cr_fe_m')        
+        df = pd.merge(df, frecuencia_m, on=['user_id', 'created_at_m'], how='left')
+
 
         #cls.add_df(df_jo,"df_jo")
         return df
