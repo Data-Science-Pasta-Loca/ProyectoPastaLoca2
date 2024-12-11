@@ -373,6 +373,32 @@ class Manager:
         df_jo = df_jo.drop(columns=['Date_y'])
         cls.add_df(df_jo,"df_jo")
 
+        df_hyper = df_jo[[#'id_cr', #'id_fe','fe_cr_id'
+            'user_id', #'active',
+            'created_at', # 'updated_at',
+            'created_at_slot', 'created_at_dow',
+            #'created_at_d', 'created_at_w', 'created_at_m',
+            #'Mes_created_at',
+            #'cash_request_received_date',
+            'amount', # 'fee',
+            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_incidents', 
+            #'stat_cr', 'stat_fe',
+            #'type',
+            'transfer_type', 'charge_moment',
+            #'recovery_status', 
+            'reco_creation',  #'reco_last_update',
+            'to_receive_ini', 'to_receive_bank', 'to_reimbur',
+            'to_reimbur_cash', 'to_end', 'to_send',
+            'send_at', 'paid_at',
+            'moderated_at', 'category',
+            #'reason',
+            #'from_date', 'to_date',            
+            #'updated_at_fe',             
+            #'n_cr_fe_w', 'n_cr_fe_m', 
+            'GBP_EUR', 'BTC_GBP', 'inflation', 'unemploy_rate'
+            ]].copy()
+        cls.add_df(df_hyper,"df_hyper")
+
     @classmethod
     def format_data(cls):
         """
