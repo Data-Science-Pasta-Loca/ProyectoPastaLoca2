@@ -405,7 +405,7 @@ class Manager:
             #'created_at', 
             'created_at_slot', 'created_at_dow',
             'amount',
-            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_incidents', 
+            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
             'transfer_type', 'charge_moment',
             #'reco_creation', 
             #'to_receive_ini', 'to_receive_bank', 'to_reimbur',
@@ -712,23 +712,25 @@ class Manager:
         # Rellenar NaN de stat_fe por cr regulares
         df['stat_fe'] = df['stat_fe'].fillna('cr_regular')
 
+        df = df.sort_values(['created_at','created_at_fe'])
+
         # Clasificacion basica de los usuarios: segun los status de CR y FEEDS
         good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
         good_fe = ['confirmed', 'accepted', 'cr_regular']
-        # df['needs_m_check'] = (~(
-        #     (df['stat_cr'].isin(good_cr)) & 
-        #     (df['stat_fe'].isin(good_fe))
-        #     )).astype(int)
-        
+
+        money_back = df['stat_cr'] == "money_back"
+        fee_accepted = df['stat_fe'] == "accepted"
+
+        is_good_cr = df['stat_cr'].isin(good_cr)
+        is_good_fe = df['stat_fe'].isin(good_fe)
+        bad_recovery_status_fe = ~df['recovery_status'].isin(["nice",'pending'])
+
         no_incident_cr_reco = ['nice']
         df['needs_m_check_recov'] = (~(
             (df['stat_cr'].isin(good_cr)) & 
             (df['stat_fe'].isin(good_fe)) & 
             (df['recovery_status'].isin(no_incident_cr_reco))
             )).astype(int)
-
-
-
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
         #df = df.drop(columns=['n_fees'])
@@ -756,20 +758,27 @@ class Manager:
 
 
         # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
-        df = df.sort_values(['created_at','created_at_fe'])
-        df['n_recovery'] = (df['recovery_status'] != "nice") & (df['amount'] > 0)
+        df['n_recovery'] = (df['recovery_status'] != "nice") # & (df['amount'] > 0)
         df['n_recovery'] = df.groupby('user_id')['n_recovery'].cumsum()
 
         # # Para stat_cr != good_cr | stat_fe != good_fe acumulamos el numero de operaciones de tipo money_back
-        good_cr = ['approved', 'money_sent', 'pending', 'direct_debit_sent', 'active', 'money_back']
-        good_fe = ['confirmed', 'accepted', 'cr_regular']        
-        df = df.sort_values(['created_at','created_at_fe'])
-        df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
-        df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
 
         #df['n_user_cr_fe'] = df.groupby('user_id').size().reset_index(name='n_user_cr_fe')
 
-    
+        # df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
+        # df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()    
+        #df['n_incidents'] = ( (~is_good_cr) | (~is_good_fe) | (bad_recovery_status_fe)  ) & (df['amount'] > 0)
+        #df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
+
+        df['n_inc_back'] =  ~is_good_cr # & (df['amount'] > 0)
+        df['n_inc_back'] = df.groupby('user_id')['n_inc_back'].cumsum()
+
+        df['n_inc_fees'] = ( ~is_good_fe | bad_recovery_status_fe ) #& (df['amount'] > 0)
+        df['n_inc_fees'] = df.groupby('user_id')['n_inc_fees'].cumsum()
+
+
+
+
         df['created_at_w'] = df['created_at'].dt.isocalendar().week
         df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
         df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
