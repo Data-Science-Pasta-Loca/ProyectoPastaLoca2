@@ -405,7 +405,7 @@ class Manager:
             #'created_at', 
             'created_at_slot', 'created_at_dow',
             'amount',
-            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
+            'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
             'transfer_type', 'charge_moment',
             #'reco_creation', 
             #'to_receive_ini', 'to_receive_bank', 'to_reimbur',
@@ -415,6 +415,7 @@ class Manager:
             'n_cr_fe_w', #'n_cr_fe_m', 
             #'category',
             'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
+            'needs_m_check_recov'
             ]].copy()
         cls.add_df(df_hyper,"df_hyper")
 
@@ -423,7 +424,7 @@ class Manager:
             'created_at', 
             'created_at_slot', 'created_at_dow',
             'amount',
-            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
+            'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
             'transfer_type', 'charge_moment',
             'reco_creation', 
             'to_receive_ini', 'to_receive_bank', 'to_reimbur',
@@ -433,6 +434,7 @@ class Manager:
             'n_cr_fe_w', #'n_cr_fe_m', 
             #'category',
             'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
+            'needs_m_check_recov',
             ]].copy()
         cls.add_df(df_hyper_to,"df_hyper_to")
 
