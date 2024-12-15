@@ -418,6 +418,24 @@ class Manager:
             ]].copy()
         cls.add_df(df_hyper,"df_hyper")
 
+        df_hyper_to = df_jo[[
+            'user_id',
+            'created_at', 
+            'created_at_slot', 'created_at_dow',
+            'amount',
+            'needs_m_check_recov', 'n_fees', 'n_backs', 'n_recovery', 'n_inc_back', 'n_inc_fees',
+            'transfer_type', 'charge_moment',
+            'reco_creation', 
+            'to_receive_ini', 'to_receive_bank', 'to_reimbur',
+            'to_reimbur_cash', 'to_end', 'to_send',
+            'send_at', 'paid_at',
+            'moderated_at', 
+            'n_cr_fe_w', #'n_cr_fe_m', 
+            #'category',
+            'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
+            ]].copy()
+        cls.add_df(df_hyper_to,"df_hyper_to")
+
 
     @classmethod
     def format_data(cls):
