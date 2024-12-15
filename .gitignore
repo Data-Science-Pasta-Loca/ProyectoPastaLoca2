@@ -180,3 +180,8 @@ build/
 
 # Excluir el archivo de configuración de Jupyter
 .ipynb_checkpoints/
+
+
+Modelos/__pycache__/
+Modelos_pruebas/__pycache__/
+EDA/__pycache__/

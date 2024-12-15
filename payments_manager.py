@@ -413,7 +413,7 @@ class Manager:
             #'send_at', 'paid_at',
             #'moderated_at', 
             'n_cr_fe_w', #'n_cr_fe_m', 
-            'category',
+            #'category',
             'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
             ]].copy()
         cls.add_df(df_hyper,"df_hyper")
@@ -723,24 +723,26 @@ class Manager:
 
         is_good_cr = df['stat_cr'].isin(good_cr)
         is_good_fe = df['stat_fe'].isin(good_fe)
-        bad_recovery_status_fe = ~df['recovery_status'].isin(["nice",'pending'])
+        bad_recovery_status_fe = ~df['recovery_status'].isin(['nice','pending']) | df['category'].isin(['rejected_direct_debit','month_delay_on_payment'])
 
-        no_incident_cr_reco = ['nice']
-        df['needs_m_check_recov'] = (~(
-            (df['stat_cr'].isin(good_cr)) & 
-            (df['stat_fe'].isin(good_fe)) & 
-            (df['recovery_status'].isin(no_incident_cr_reco))
-            )).astype(int)
+        recovery_status_nice = df['recovery_status'].isin(['nice'])
+        # df['needs_m_check_recov'] = (~(
+        #     (df['stat_cr'].isin(good_cr)) & 
+        #     (df['stat_fe'].isin(good_fe)) & 
+        #     (df['recovery_status'].isin(no_incident_cr_reco))
+        #     )).astype(int)
+        df['needs_m_check_recov'] = (~(is_good_cr & is_good_fe & recovery_status_nice)).astype(int)
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones con feeds
-        #df = df.drop(columns=['n_fees'])
         df = df.sort_values(['created_at','created_at_fe'])
-        df['n_fees'] = (df['stat_cr'] == "money_back") & (df['stat_fe'] == "accepted") & (df['fee'] > 0)
+        #df['n_fees'] = (df['stat_cr'] == "money_back") & (df['stat_fe'] == "accepted") & (df['fee'] > 0)
+        df['n_fees'] = money_back & fee_accepted & (df['fee'] > 0)
         df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
 
         # # Para stat_cr == "money_back" & stat_fe == "accepted" acumulamos el numero de operaciones de tipo money_back        
         df = df.sort_values(['created_at','created_at_fe'])
-        unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
+        #unique_cr = (df['stat_cr'] == "money_back") & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
+        unique_cr = money_back & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
         df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum() # -1 # 2024-12-11 Cesc no podemos hacer el -1 esto nos deja casos en negativo que son claramente erroneos
         
         #df = df.drop(columns=['n_backs'])
@@ -755,41 +757,42 @@ class Manager:
         #df['n_backs'] = df.groupby('user_id')['id_cr'].transform('nunique')
         #df['n_backs'] = df.groupby('user_id')['n_backs'].fillna(method='ffill')
 
-
-
-        # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
-        df['n_recovery'] = (df['recovery_status'] != "nice") # & (df['amount'] > 0)
-        df['n_recovery'] = df.groupby('user_id')['n_recovery'].cumsum()
-
-        # # Para stat_cr != good_cr | stat_fe != good_fe acumulamos el numero de operaciones de tipo money_back
-
-        #df['n_user_cr_fe'] = df.groupby('user_id').size().reset_index(name='n_user_cr_fe')
-
-        # df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
-        # df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()    
-        #df['n_incidents'] = ( (~is_good_cr) | (~is_good_fe) | (bad_recovery_status_fe)  ) & (df['amount'] > 0)
-        #df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
-
         df['n_inc_back'] =  ~is_good_cr # & (df['amount'] > 0)
         df['n_inc_back'] = df.groupby('user_id')['n_inc_back'].cumsum()
 
         df['n_inc_fees'] = ( ~is_good_fe | bad_recovery_status_fe ) #& (df['amount'] > 0)
         df['n_inc_fees'] = df.groupby('user_id')['n_inc_fees'].cumsum()
+        # df['n_incidents'] = ( (~df['stat_cr'].isin(good_cr)) | (~df['stat_fe'].isin(good_fe)) | (df['recovery_status'] != "nice")  ) & (df['amount'] > 0)
+        # df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()    
+        #df['n_incidents'] = ( (~is_good_cr) | (~is_good_fe) | (bad_recovery_status_fe)  ) & (df['amount'] > 0)
+        #df['n_incidents'] = df.groupby('user_id')['n_incidents'].cumsum()
 
-
-
+        # # Para CR recovery_status != "nice" acumulamos el numero de recovery_status que han tenido incidentes.        
+        df['n_recovery'] = ~recovery_status_nice  # (df['recovery_status'] != "nice") # & (df['amount'] > 0)
+        df['n_recovery'] = df.groupby('user_id')['n_recovery'].cumsum()
 
         df['created_at_w'] = df['created_at'].dt.isocalendar().week
         df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
         df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
         frecuencia_w = df_mb.groupby(['user_id', 'created_at_w']).size().reset_index(name='n_cr_fe_w')
         df = pd.merge(df, frecuencia_w, on=['user_id', 'created_at_w'], how='left')
+        df['n_cr_fe_w'] = df['n_cr_fe_w'].fillna(0).astype(int)
 
         df['created_at_m'] = df['created_at'].dt.month
         df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
         df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
-        frecuencia_m = df_mb.groupby(['user_id', 'created_at_m']).size().reset_index(name='n_cr_fe_m')        
+        frecuencia_m = df_mb.groupby(['user_id', 'created_at_m']).size().reset_index(name='n_cr_fe_m')
         df = pd.merge(df, frecuencia_m, on=['user_id', 'created_at_m'], how='left')
+        df['n_cr_fe_m'] = df['n_cr_fe_m'].fillna(0).astype(int)
+
+        df['created_at_y'] = df['created_at'].dt.year
+        df_mb = df[df['stat_cr'].isin(good_cr)] # == 'money_back']
+        df_mb = df_mb[df_mb['stat_fe'].isin(good_fe)] # == 'accepted']
+        frecuencia_m = df_mb.groupby(['user_id', 'created_at_y']).size().reset_index(name='n_cr_fe_y')
+        df = pd.merge(df, frecuencia_m, on=['user_id', 'created_at_y'], how='left')
+        df['n_cr_fe_y'] = df['n_cr_fe_y'].fillna(0).astype(int)
+
+
 
 
         #cls.add_df(df_jo,"df_jo")
