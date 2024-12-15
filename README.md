@@ -85,4 +85,129 @@ Este modelo ayudará a identificar los casos que realmente requieren control man
 ## Conclusión
 
 Con este proyecto, buscamos mejorar la eficiencia en el proceso de control manual de *cash requests*, utilizando un modelo predictivo para optimizar los recursos y mejorar el rendimiento general del proceso.
-"""
+
+
+
+## **Modelos utilizando modelos del tipo arbol de desicion: RandomForest**
+
+Lo primero que hacemos antes de comenzar a modelar es ver como estan divididas las lineas entre:
+1) Primeras operaciones de un id_user (new_users)
+2) Segundas y posteriores operaciones de un id_user (rep_users)
+
+![Segmentacion de Dataframes](Alejandro\dataset_rep_vs_new.png)
+
+Se analiza el balanceo de las clases de nuestra etiqueta para cada segmentacion:
+
+![Balance de Clases](Alejandro\class_check.png)
+
+Si bien se hicieron muchas pruebas con ambas segmentaciones se observo un mejor rendimiento utilizando la totalidad de la BBDD, observando que las primeras transacciones de clientes aportaban mucha informacion al modelos para clasificar.
+
+Por mas que las clases estaban bastante balanceadas 52,31 %, se realiza el balanceo de clases para no tener sesgo a ninguna de las 2 clases.
+
+![Correlacion Inicial](Alejandro\corr_simple.png)
+
+Hacemos una matriz de correlacion inicial unicamente para tener una nocion inicial de todas nuestras caracteristicas y hallar dependencias lineales.
+Se puede ver una correlacion lineal muy notoria entre las caracteristicas "n_cr_fe_w" y  "n_cr_fe_m", excluimos de nuestro modelo "n_cr_fe_m".
+
+Inicialmente hacemos un primer modelo con estas 17 caracteristicas que consideramos que pueden influir en la prediccion de nuestra etiqueta "needs_m_check". Utilizamos los hiperparametros standard del modelo RandomForest.
+
+![Modelo Inicial](Alejandro\all_variables_results.png)
+
+Obtenemos los siguientes pesos de las caracteristicas, una accuracy del 97,58 % y la siguiente matriz de confusión.
+
+![Modelo Inicial Results](Alejandro\features_all_variables.png)
+
+
+![Confusion Inicial](Alejandro\confusion_initial.png)
+
+Vemos que si bien el accuracy es alto y la matriz de confusión muy buena, al analizar los errores de entrenamiento y prueba obtenemos lo siguiente:
+
+![Error de Modelo Inicial](Alejandro\all_variables_overfitting.png)
+
+A partir de estos resultados y para mejorar el overfitting que hemos obtenido y viendo la distribucion de pesos nos quedaremos con las top 4 variables. Estas representan el 70% del modelo inical y son:
+
+1) n_inc_fees: Número de incidencias por fees totales del user_id
+2) n_cr_fe_w: Número de operaciones (CR o fees) por semana del user_id
+3) n_backs: Número de operaciones de CR totales del user_id
+4) n_recovery: Número de incidencias por recovery (departamento de moras) del user_id
+
+![Modelo Top 4 Variables](Alejandro\features_top_4.png)
+
+Se obtiene un error del 94,45 %, baja el accuracy, pero no demasiado simplicando el modelo de 17 caracteristicas a solo 4.
+
+![Modelo Top 4 Result](Alejandro\top_4_model_results.png)
+
+Y las siguientes curvas de error, se ve que hemos reducido bastante el overfitting:
+
+![Modelo Top 4 Error](Alejandro\top_4_error.png)
+
+A continuación para refinar nuestro modelo hacemos una busqueda de los hiperparametros optimos:
+
+-    'n_estimators': Número de árboles
+-    'min_samples_split': Mínimas muestras para dividir un nodo
+-    'min_samples_leaf': Mínimas muestras en una hoja
+-    'max_features': Número máximo de características para cada división
+-    'class_weight': Peso para manejar desbalanceo
+-    'criterion': Criterio para medir la calidad de las divisiones   
+
+
+utilizando la funcion utilizando una validacion cruzada de 10 pliegues utilizando la funcion "GridSearchCV" de la libreria sklearn.
+
+Consideramos como los mejores modelos los que tengan mayor accuracy mas alto y diferencia entre errores de entrenamiento y prueba mas chico (overfitting gap) para asi evitar el sobreajuste.
+
+Los resultos obtenidos fueron:
+
+-    'n_estimators': 50
+-    'min_samples_split': 5
+-    'min_samples_leaf': 2
+-    'max_features': sqrt
+-    'class_weight': balanced
+-    'criterion': entropy  
+
+Dejamos la profundidad maxima y la seleccion del optimo para evaluar con un grafico de boxplots para comparar profundidades graficamente.
+
+Evaluamos nuevamente el modelo con la seleccion de los hiperparametros optimos encontrados. Se encuentran los siguientes resultados:
+
+![Modelo Top 4 Hyperparameters Variables](Alejandro\top_4_features_hyper.png)
+
+![Modelo Top 4 Hyperparameters Results](Alejandro\top_4_results_hyper.png)
+
+![Modelo Top 4 Hyperparameters Error](Alejandro\top_4_hyper_error.png)
+
+
+Realizamos el analisis de la profundidad maxima del modelo en funcion a un grafico de boxplots y se obtiene lo siguiente:
+
+![Modelo Top 4 Hyperparameters Max Depth](Alejandro\top_4_hyper_boxplots.png)
+
+Se puede observar que el optimo de la profundiad es 10.
+
+Modificamos este hiperparametro y calculamos otra vez el modelo con los siguientes hiperparametros:
+
+-    'n_estimators': 50
+-    'min_samples_split': 5
+-    'min_samples_leaf': 2
+-    'max_features': sqrt
+-    'class_weight': balanced
+-    'criterion': entropy
+-    'max_depth: 10
+
+Se obtienen los siguientes resultados:
+
+![Modelo Top 4 Hyperparameters Final Variables](Alejandro\top_4_features_hyper_final.png)
+
+![Modelo Top 4 Hyperparameters Final Results](Alejandro\top_4_results_hyper_final.png)
+
+![Modelo Top 4 Hyperparameters Final Error](Alejandro\top_4_hyper_final_error.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
