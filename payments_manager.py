@@ -413,7 +413,7 @@ class Manager:
             #'send_at', 'paid_at',
             #'moderated_at', 
             'n_cr_fe_w', #'n_cr_fe_m', 
-            'category',
+            #'category',
             'inflation' , 'GBP_EUR', 'BTC_GBP', 'unemploy_rate',
             ]].copy()
         cls.add_df(df_hyper,"df_hyper")
@@ -723,7 +723,7 @@ class Manager:
 
         is_good_cr = df['stat_cr'].isin(good_cr)
         is_good_fe = df['stat_fe'].isin(good_fe)
-        bad_recovery_status_fe = ~df['recovery_status'].isin(['nice','pending'])
+        bad_recovery_status_fe = ~df['recovery_status'].isin(['nice','pending']) | df['category'].isin(['rejected_direct_debit','month_delay_on_payment'])
 
         recovery_status_nice = df['recovery_status'].isin(['nice'])
         # df['needs_m_check_recov'] = (~(
