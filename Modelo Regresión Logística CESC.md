@@ -1,5 +1,11 @@
 # **MODELO DE REGRESIÓN LOGÍSTICA**
 
+# Preliminares:
+- Características consideradas (JUSTIFICAR)
+- Rellenar ceros (JUSTIFICAR)
+- Poner lo de news y repetitivo
+
+
 # Introducción
 
 Este análisis explica la implementación de modelos de Regresión Logística para **predecir la necesidad de verificación manual (neeed manual check) en nuestro conjunto de datos**. Las características que se han incluido en este estudio son las justificadas previamente en nuestro *df_hyper*, por lo tanto al empezar esta implementación contamos con 16 características (6 de ellas calculadas por nosotros, 4 exógenas añadidas y el resto del conjunto de datos original) más la variable objetivo (columna no original).
@@ -26,16 +32,16 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
 
     - Las variables categóricas fueron convertidas a numéricas mediante codificación `OneHotEncoding`.
 
-    - Los valores faltantes en las variables se rellenaron con ceros.
+    - Los valores faltantes en las variables numéricas se rellenaron con ceros. (JUSTIFICACIÓN??)
 
     - Se estandarizaron las características utilizando `StandardScaler`. Posteriormente se provó el mismo proceso pero con otra estandarización (`MaxMinScaler`) para comparar y detectar si hubiera sido mejor elección.
-  
+
 
 # Exploración de Datos
 
 Se calculó y visualizó la matriz de correlación. Esto ayudó a identificar si había posibles multicolinealidades.
 
-![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.png)
+![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.npg)
 
 # Modelo BASE
 
@@ -96,9 +102,9 @@ Ridge y Lasso aún así, tienen valores distintos para los coeficientes. Son dif
 Podemos ver que tienen un desempeño similar pero que L2 es más robusto y estable tanto en Accuracy, AUC-ROC y LogLoss para C pequeñas.
 Con esta información decidimos aplicar esta C óptima al modelo regularizado con L2 (Ridge)  y poder observar la curva de aprendizaje que genera por si aparecen comportamientos no deseados.
 
-![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.png)
+![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.npg)
 
-![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.png)
+![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.npg)
 
 # PCA para reducción de dimensionalidad
 
@@ -111,7 +117,7 @@ Los resultados del modelo con este PCA son muy parecidos al modelo BASE pero con
 
 `Accuracy = 0.9176`
 
-![PCA2](Alba/images/matrizconfusionPCA.png)
+![PCA2](Alba/images/matrizconfusionPCA.npg)
 
 ![PCA3](Alba/images/curvaaprendizajePCA.png)
 
@@ -121,9 +127,9 @@ Debido al profundo estudio que hemos hecho de nuestros datos y del conocimiento 
 
 Características de la selección manual = `'n_inc_fees','n_recovery','n_fees','n_backs','n_cr_fe_w','BTC_GBP'`
 
-![Final1](Alba/images/coeficientesoddsFINAL.png)
+![Final1](Alba/images/coeficientesoddsFINAL.npg)
 
-![Final2](Alba/images/matrizconfusionFINAL.png)
+![Final2](Alba/images/matrizconfusionFINAL.npg)
 
 La curva de aprendizaje para este modelo tiene un comportamiento aceptable y sin signos de sobreajuste.
 
@@ -154,31 +160,15 @@ Los coeficientes del modelo permiten interpretar las variables más influyentes:
 
 # Comparación de MODELOS
 
-Una vez hecho todo este proceso, (como ya mencionamos el principio del análisis de regresión logística) replicamos todo este estudio pero cambiando el tipo de estandarización de datos. En lugar de usar el `StandardScaler` usamos el `MinMaxScaler`. Por lo que tenemos todo este estudio duplicado. 
+Una vez hecho todo este proceso, (como ya mencionamos el principio del análisis de regresión logística) replicamos todo este estudio pero cambiando el tipo de estandarización de datos. En lugar de usar el `StandardScaler` usamos el `MaxMinScaler`. Por lo que tenemos todo este estudio duplicado. 
 
-Lo que se observa al aplicar esta estandarización del `MinMaxScaler` es que la curva de aprendizaje no muestra un buen desempeño ya que se cruzan las líneas de los errores. Esto puede ser síntoma de un sobreajuste que podría explicarse debido a la mayor sensibilidad introducida por este escalador que al transofrmar los datos a un rango fijo [0,1] podrá hacer al modelo más sensible a ruidos o patrones específicos en el entrenamiento.
+Con estas **10 variantes del modelo de regresión logística** estudiamos los resultados de cada uno para comparar y poder sacar conclusiones.
 
-![MinMax1](Alba/images/curvaaprendizajeMINMAX.png)
+COMPARATIVA RESULTADOS MODELOS (ACCURACY, AUC-ROC, FN%, Ein, Eout) STDSCALER Y MANMIX y tambien NEW/REPETITIVE_USERS
 
-Antes de seguir, mostramos como la segmentación de los datos en `new_users`y `repetitive_users` no llega ni supera al desempeño de nuestro modelo y por lo tanto se decide no tomar esta posible segmentación en cuenta como mejora. Para los repetitivos nuestro modelo base no logra clasificar ningún Positivo verdadero. Con la regularización Lasso mejora mucho pero sigue sin alcanzar a nuestro modelo BASE que toma todos los datos.
+Con esta información que resume nuestros modelos, decidimos que para Regresión Logística nos quedamos con nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
+Aún así, para intentar mejorar la tasa de `Falsos Negativos` aplicamos una variación al umbral (`treshold`) y lo modificamos a 0.4, hecho que minima estos FN al XXX%
 
-![Segmentación1](Alba/images/repetitivos.png)
+RESULTADOS MODELO FINAL CON UMBRAL 0.4
 
-![Segmentación2](Alba/images/comparacionrepetitivos.png)
-
-Para los usuarios nuevos (el primer registro de interacción que tenemos del usuario en nuestros datos) el modelo tampoco se desempeña tan bien como el que considera todos los datos. Aquí se puede observar una curva ROC menos ideal y una falta de capacidad del modelo para predecir los que necesitan control manual. 
-
-![Segmentación3](Alba/images/nuevos.png)
-
-Es por esto, que en el estudio comparativo final solo contemplaremos el proceso hecho con `StandardScaler` para la estandarización y con la totalidad de los datos (tanto los usuarios repetitivos como los "nuevos"). Eso se traduce en **varios modelos de regresión logística** con distintos parámetros para los que estudiamos los resultados de cada uno y sacamos conclusiones.
-
-![Boxplotfinal](Alba/images/boxplotFINAL.png)
-
-Con esta información que resume nuestros modelos, decidimos que para Regresión Logística el mejor modelo es nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
-Una vez escogido, como sabemos que sin el balance de cargas el modelo se desempeñaba mejor, nos quedamos el que no tiene el balanceo y aplicamos una variación al umbral (`treshold`) para dejarlo en `0.4`, hecho que minimiza estos FN al **8.67%**.
-
-![Modelofinal](Alba/images/resultadosFINALumbral.png)
-
-![Modelofinal2](Alba/images/curvaaprendizajeFINALNOBALANCED.png)
-
-Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo objetivo para ver si tiene mejor desempeño y poder comparar. 
+Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo problema para ver si tiene mejor desempeño y poder comparar. 
