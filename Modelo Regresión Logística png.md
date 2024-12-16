@@ -35,13 +35,13 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
     - Los valores faltantes en las variables numéricas se rellenaron con ceros. (JUSTIFICACIÓN??)
 
     - Se estandarizaron las características utilizando `StandardScaler`. Posteriormente se provó el mismo proceso pero con otra estandarización (`MaxMinScaler`) para comparar y detectar si hubiera sido mejor elección.
-
+  
 
 # Exploración de Datos
 
 Se calculó y visualizó la matriz de correlación. Esto ayudó a identificar si había posibles multicolinealidades.
 
-![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.npg)
+![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.png)
 
 # Modelo BASE
 
@@ -102,9 +102,9 @@ Ridge y Lasso aún así, tienen valores distintos para los coeficientes. Son dif
 Podemos ver que tienen un desempeño similar pero que L2 es más robusto y estable tanto en Accuracy, AUC-ROC y LogLoss para C pequeñas.
 Con esta información decidimos aplicar esta C óptima al modelo regularizado con L2 (Ridge)  y poder observar la curva de aprendizaje que genera por si aparecen comportamientos no deseados.
 
-![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.npg)
+![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.png)
 
-![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.npg)
+![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.png)
 
 # PCA para reducción de dimensionalidad
 
@@ -117,7 +117,7 @@ Los resultados del modelo con este PCA son muy parecidos al modelo BASE pero con
 
 `Accuracy = 0.9176`
 
-![PCA2](Alba/images/matrizconfusionPCA.npg)
+![PCA2](Alba/images/matrizconfusionPCA.png)
 
 ![PCA3](Alba/images/curvaaprendizajePCA.png)
 
@@ -127,9 +127,9 @@ Debido al profundo estudio que hemos hecho de nuestros datos y del conocimiento 
 
 Características de la selección manual = `'n_inc_fees','n_recovery','n_fees','n_backs','n_cr_fe_w','BTC_GBP'`
 
-![Final1](Alba/images/coeficientesoddsFINAL.npg)
+![Final1](Alba/images/coeficientesoddsFINAL.png)
 
-![Final2](Alba/images/matrizconfusionFINAL.npg)
+![Final2](Alba/images/matrizconfusionFINAL.png)
 
 La curva de aprendizaje para este modelo tiene un comportamiento aceptable y sin signos de sobreajuste.
 
