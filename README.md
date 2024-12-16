@@ -54,12 +54,12 @@ Para nosotros, un CR lo etiquetamos como necesario de realizar control manual ba
 
 - **Gráfico de conclusión 2**:  
   Muestra el comportamiento de los CR a controlar a lo largo del tiempo.  
-  ![Total CR vs Manual Check](Alejandro/total_cr_vs_manual_check.png)
+  ![Total CR vs Manual Check](Alejandro\asis\as_is_manual_check.png)
 
 - **Gráfico de conclusión 4**:  
   Analiza la relación entre el rendimiento de los manual checks y la eficiencia a lo largo de las semanas.  
-  ![Análisis Manual Check](Alejandro/manual_check_analysis.png)  
-  ![Eficiencia vs Porcentaje](Alejandro/percentage_vs_efficency.png)
+  ![Análisis Manual Check](Alejandro\asis\manual_check_analysis.png)  
+  ![Eficiencia vs Porcentaje](Alejandro\asis\percentage_vs_efficency.png)
 
 ---
 
@@ -67,7 +67,7 @@ Para nosotros, un CR lo etiquetamos como necesario de realizar control manual ba
 
 El crecimiento casi exponencial de los CR que debieron haber sido controlados manualmente y no lo fueron se debe a la falta de criterios claros y herramientas eficaces para seleccionar los casos a controlar. Este problema se refleja en el bajo rendimiento de los controles manuales, que estuvo por debajo del 60% debido a una falta de optimización en la gestión de recursos.
 
-  ![CR susceptibles a problemas no controlados](Alejandro/CR_no_check_and_should.png)
+  ![CR susceptibles a problemas no controlados](Alejandro\asis\CR_no_check_and_should.png)
 
 ### Solución Propuesta
 
@@ -78,15 +78,17 @@ Proponemos la creación de un modelo predictivo que identifique qué casos reque
 ### Diagrama de Flujo del Nuevo Servicio
 
 Este modelo ayudará a identificar los casos que realmente requieren control manual, optimizando así los recursos y mejorando la eficiencia de los procesos.  
-![Nuevo Diagrama de Flujo](Alejandro/new_client_requests_CR.png)
+![Nuevo Diagrama de Flujo](Alejandro\asis\new_client_requests_CR.png)
 
 ---
 
 ## Conclusión
 
-Con este proyecto, buscamos mejorar la eficiencia en el proceso de control manual de *cash requests*, utilizando un modelo predictivo para optimizar los recursos y mejorar el rendimiento general del proceso.
+El presente proyecto tiene como objetivo optimizar el proceso de control manual de solicitudes de préstamos, abordando una problemática inicial en la que solo el 60% de las solicitudes controladas manualmente eran realmente necesarias. Esto generaba una sobrecarga operativa y un uso ineficiente de recursos. Utilizando técnicas de Data Science y Machine Learning, buscamos desarrollar un modelo predictivo basado en transacciones históricas que permita identificar de manera precisa cuáles solicitudes requieren un control manual.
 
+Este modelo no solo reducirá la carga operativa al eliminar controles innecesarios, sino que también mejorará la eficiencia global del proceso, contribuyendo al uso óptimo de recursos humanos y tecnológicos. Como resultado, esperamos generar un impacto significativo en la toma de decisiones y en la calidad del servicio al cliente.
 
+---
 
 ## **Modelos utilizando modelos del tipo arbol de desicion: RandomForest**
 
@@ -94,35 +96,30 @@ Lo primero que hacemos antes de comenzar a modelar es ver como estan divididas l
 1) Primeras operaciones de un id_user (new_users)
 2) Segundas y posteriores operaciones de un id_user (rep_users)
 
-![Segmentacion de Dataframes](Alejandro\dataset_rep_vs_new.png)
+![Segmentacion de Dataframes](Alejandro\exploring_data\dataset_rep_vs_new.png)
 
 Se analiza el balanceo de las clases de nuestra etiqueta para cada segmentacion:
 
-![Balance de Clases](Alejandro\class_check.png)
+![Balance de Clases](Alejandro\exploring_data\class_check.png)
 
 Si bien se hicieron muchas pruebas con ambas segmentaciones se observo un mejor rendimiento utilizando la totalidad de la BBDD, observando que las primeras transacciones de clientes aportaban mucha informacion al modelos para clasificar.
 
 Por mas que las clases estaban bastante balanceadas 52,31 %, se realiza el balanceo de clases para no tener sesgo a ninguna de las 2 clases.
 
-![Correlacion Inicial](Alejandro\corr_simple.png)
-
-Hacemos una matriz de correlacion inicial unicamente para tener una nocion inicial de todas nuestras caracteristicas y hallar dependencias lineales.
-Se puede ver una correlacion lineal muy notoria entre las caracteristicas "n_cr_fe_w" y  "n_cr_fe_m", excluimos de nuestro modelo "n_cr_fe_m".
-
 Inicialmente hacemos un primer modelo con estas 17 caracteristicas que consideramos que pueden influir en la prediccion de nuestra etiqueta "needs_m_check". Utilizamos los hiperparametros standard del modelo RandomForest.
 
-![Modelo Inicial](Alejandro\all_variables_results.png)
+![Modelo Inicial](Alejandro\no_segmentation_model\all_variables_results.png)
 
 Obtenemos los siguientes pesos de las caracteristicas, una accuracy del 97,58 % y la siguiente matriz de confusión.
 
-![Modelo Inicial Results](Alejandro\features_all_variables.png)
+![Modelo Inicial Results](Alejandro\no_segmentation_model\features_all_variables.png)
 
 
-![Confusion Inicial](Alejandro\confusion_initial.png)
+![Confusion Inicial](Alejandro\no_segmentation_model\confusion_initial.png)
 
 Vemos que si bien el accuracy es alto y la matriz de confusión muy buena, al analizar los errores de entrenamiento y prueba obtenemos lo siguiente:
 
-![Error de Modelo Inicial](Alejandro\all_variables_overfitting.png)
+![Error de Modelo Inicial](Alejandro\no_segmentation_model\all_variables_overfitting.png)
 
 A partir de estos resultados y para mejorar el overfitting que hemos obtenido y viendo la distribucion de pesos nos quedaremos con las top 4 variables. Estas representan el 70% del modelo inical y son:
 
@@ -131,15 +128,15 @@ A partir de estos resultados y para mejorar el overfitting que hemos obtenido y 
 3) n_backs: Número de operaciones de CR totales del user_id
 4) n_recovery: Número de incidencias por recovery (departamento de moras) del user_id
 
-![Modelo Top 4 Variables](Alejandro\features_top_4.png)
+![Modelo Top 4 Variables](Alejandro\no_segmentation_model\features_top_4.png)
 
 Se obtiene un error del 94,45 %, baja el accuracy, pero no demasiado simplicando el modelo de 17 caracteristicas a solo 4.
 
-![Modelo Top 4 Result](Alejandro\top_4_model_results.png)
+![Modelo Top 4 Result](Alejandro\no_segmentation_model\top_4_model_results.png)
 
 Y las siguientes curvas de error, se ve que hemos reducido bastante el overfitting:
 
-![Modelo Top 4 Error](Alejandro\top_4_error.png)
+![Modelo Top 4 Error](Alejandro\no_segmentation_model\top_4_error.png)
 
 A continuación para refinar nuestro modelo hacemos una busqueda de los hiperparametros optimos:
 
@@ -168,16 +165,16 @@ Dejamos la profundidad maxima y la seleccion del optimo para evaluar con un graf
 
 Evaluamos nuevamente el modelo con la seleccion de los hiperparametros optimos encontrados. Se encuentran los siguientes resultados:
 
-![Modelo Top 4 Hyperparameters Variables](Alejandro\top_4_features_hyper.png)
+![Modelo Top 4 Hyperparameters Variables](Alejandro\no_segmentation_model\top_4_features_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Results](Alejandro\top_4_results_hyper.png)
+![Modelo Top 4 Hyperparameters Results](Alejandro\\no_segmentation_model\top_4_results_hyper.png)
 
-![Modelo Top 4 Hyperparameters Error](Alejandro\top_4_hyper_error.png)
+![Modelo Top 4 Hyperparameters Error](Alejandro\no_segmentation_model\top_4_hyper_error.png)
 
 
 Realizamos el analisis de la profundidad maxima del modelo en funcion a un grafico de boxplots y se obtiene lo siguiente:
 
-![Modelo Top 4 Hyperparameters Max Depth](Alejandro\top_4_hyper_boxplots.png)
+![Modelo Top 4 Hyperparameters Max Depth](Alejandro\no_segmentation_model\top_4_hyper_boxplots.png)
 
 Se puede observar que el optimo de la profundiad es 10.
 
@@ -193,11 +190,11 @@ Modificamos este hiperparametro y calculamos otra vez el modelo con los siguient
 
 Se obtienen los siguientes resultados:
 
-![Modelo Top 4 Hyperparameters Final Variables](Alejandro\top_4_features_hyper_final.png)
+![Modelo Top 4 Hyperparameters Final Variables](Alejandro\no_segmentation_model\top_4_features_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Final Results](Alejandro\top_4_results_hyper_final.png)
+![Modelo Top 4 Hyperparameters Final Results](Alejandro\no_segmentation_model\top_4_results_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Final Error](Alejandro\top_4_hyper_final_error.png)
+![Modelo Top 4 Hyperparameters Final Error](Alejandro\no_segmentation_model\top_4_hyper_final_error.png)
 
 
 
