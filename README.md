@@ -139,11 +139,11 @@ En este apartado mostramos cada uno de los registros contenidos en las tablas de
 
 ### Diagrama de Flujo del Servicio Actual
 
-![Diagrama de flujo](Alejandro/client_requests_CR.png)
+![Diagrama de flujo](Alejandro/asis/client_requests_CR.png)
 
 ### Análisis de rendimiento de los manual checks a lo largo de las semanas
 
-![Análisis rendimiento](Alejandro/as_is_manual_check.png)
+![Análisis rendimiento](Alejandro/asis/as_is_manual_check.png)
 
 #### Aclaraciones de Métricas:
 - **Unique ID CR**: Cantidad total de CR.
@@ -1158,6 +1158,86 @@ Se obtienen los siguientes resultados:
 
 ![Modelo Top 4 Hyperparameters Final Error](Alejandro/no_segmentation_model/top_4_hyper_final_error.png)
 
+## **Modelos segmentando los clientes repetitivos**
+
+Al segmentar el dataframe para los clientes repetitivos, se sigue el mismo proceso. Se realiza un primer modelo utilizando **todas las variables** y los **hiperparámetros estándar** del modelo de Random Forest (RF):
+
+### Resultados del modelo con todas las variables
+![Modelo ALL variables Repeat Variables](Alejandro/repeat_model/repet_all_features.png)
+
+![Resultados del modelo con todas las variables](Alejandro/repeat_model/repeat_all_variables_results.png)
+
+![Error del modelo con todas las variables](Alejandro/repeat_model/repet_all_features_error.png)
+
+Vemos que el modelo está sobreajustado.
+
+---
+
+### Selección de las columnas más importantes
+Como hicimos con el otro dataset, nos quedamos con las **top 4 columnas** que representan el 70% del peso. Obtenemos los siguientes resultados:
+
+#### Modelo con las 4 columnas más importantes
+![Modelo Top 4 Repeat Variables](Alejandro/repeat_model/repet_top_4.png)
+
+#### Resultados del modelo con las 4 columnas más importantes
+![Resultados del modelo Top 4 Repeat](Alejandro/repeat_model/repeat_top_4_results.png)
+
+#### Matriz de confusión
+![Confusión del modelo Top 4 Repeat](Alejandro/repeat_model/repet_top_4_confusion.png)
+
+#### Error del modelo Top 4 Repeat
+![Error del modelo Top 4 Repeat](Alejandro/repeat_model/repeat_top_4_error.png)
+
+---
+
+### Optimización de hiperparámetros
+Procedemos a realizar la búsqueda de los hiperparámetros óptimos para nuestro modelo utilizando validación cruzada. Dejamos para posterior análisis gráfico la profundidad. Los **hiperparámetros óptimos hallados** para este modelo fueron:
+
+- `n_estimators`: 50  
+- `min_samples_split`: 5  
+- `min_samples_leaf`: 4  
+- `max_features`: log2  
+- `class_weight`: None  
+- `criterion`: gini  
+- `max_depth`: ¿?
+
+#### Boxplots para analizar la profundidad
+Realizamos un gráfico de boxplots para analizar diferentes profundidades y determinar gráficamente cuál es la óptima:
+
+![Boxplots de profundidad](Alejandro/repeat_model/repeat_top_4_hyper_boxplots.png)
+
+Elegimos como **óptima la profundidad de 10**. Modificamos este parámetro y analizamos los resultados finales del modelo.
+
+---
+
+### Resultados finales del modelo optimizado
+#### Modelo con las 4 columnas más importantes (final)
+![Modelo Top 4 Repeat Variables Final](Alejandro/repeat_model/repet_top_4_final.png)
+
+#### Resultados finales del modelo optimizado
+![Resultados finales del modelo Top 4 Repeat](Alejandro/repeat_model/repeat_top_4_results_final.png)
+
+#### Matriz de confusión final
+![Confusión del modelo Top 4 Repeat Final](Alejandro/repeat_model/repet_top_4_confusion_final.png)
+
+#### Error del modelo final
+![Error del modelo Top 4 Repeat Final](Alejandro/repeat_model/repeat_top_4_error_final.png)
+
+---
+
+### Conclusión
+Como se puede observar, el rendimiento del modelo baja ligeramente al considerar únicamente la información de clientes repetitivos. Las primeras transacciones de nuevos clientes nos proporcionan información valiosa para nuestros modelos, además de contar con un dataframe más grande y robusto que permite optimizar mejor los modelos.
+
+---
+
+## **Comparación de modelos: Regresión Logística vs Random Forest**
+
+Se toman los mejores modelos obtenidos:
+- Regresión lineal
+- Random Forest (con y sin segmentación)
+
+#### Comparación gráfica:
+![Comparación de modelos](Alejandro/comparison.png)
 
 
 
