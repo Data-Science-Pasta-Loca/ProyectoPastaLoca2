@@ -1,11 +1,5 @@
 # **MODELO DE REGRESIÓN LOGÍSTICA**
 
-# Preliminares:
-- Características consideradas (JUSTIFICAR)
-- Rellenar ceros (JUSTIFICAR)
-- Poner lo de news y repetitivo
-
-
 # Introducción
 
 Este análisis explica la implementación de modelos de Regresión Logística para **predecir la necesidad de verificación manual (neeed manual check) en nuestro conjunto de datos**. Las características que se han incluido en este estudio son las justificadas previamente en nuestro *df_hyper*, por lo tanto al empezar esta implementación contamos con 16 características (6 de ellas calculadas por nosotros, 4 exógenas añadidas y el resto del conjunto de datos original) más la variable objetivo (columna no original).
@@ -32,7 +26,7 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
 
     - Las variables categóricas fueron convertidas a numéricas mediante codificación `OneHotEncoding`.
 
-    - Los valores faltantes en las variables numéricas se rellenaron con ceros. (JUSTIFICACIÓN??)
+    - Los valores faltantes en las variables se rellenaron con ceros.
 
     - Se estandarizaron las características utilizando `StandardScaler`. Posteriormente se provó el mismo proceso pero con otra estandarización (`MaxMinScaler`) para comparar y detectar si hubiera sido mejor elección.
   
@@ -41,23 +35,23 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
 
 Se calculó y visualizó la matriz de correlación. Esto ayudó a identificar si había posibles multicolinealidades.
 
-![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.npg)
+![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.png)
 
 # Modelo BASE
 
 Se dividen los datos en conjuntos de entrenamiento (80%) y prueba (20%). El modelo base es entrenado con `LogisticRegression` con el `solver='liblinear'` y con la penalización por defecto que es la L2.
 
-![Restultados1BASE](Alba/images/distribucionprobabilidadesBASE.npg)
+![Restultados1BASE](Alba/images/distribucionprobabilidadesBASE.png)
 
-![Restultados2BASE](Alba/images/AccuracyBASE.npg)
+![Restultados2BASE](Alba/images/AccuracyBASE.png)
 
-![Restultados3BASE](Alba/images/matrizconfusionBASE.npg)
+![Restultados3BASE](Alba/images/matrizconfusionBASE.png)
 
-![Restultados4BASE](Alba/images/ROCcurveBASE.npg)
+![Restultados4BASE](Alba/images/ROCcurveBASE.png)
 
 La curva de aprendizaje de este modelo nos indica que todo parece fluir de manera correcta.
 
-![Restultados5BASE](Alba/images/curvaaprendizajeBASE.npg)
+![Restultados5BASE](Alba/images/curvaaprendizajeBASE.png)
 
 # Regularización L1 y L2
 
@@ -82,7 +76,7 @@ Los resultados obtenidos son:
 
 Esto significa que para L1 la C óptima aplica una penalización más fuerte que para L2.
 
-![Resultados1C](Alba/images/AccuracyVSC.npg)
+![Resultados1C](Alba/images/AccuracyVSC.png)
 
 Podemos ver la que L2 tiene una curva más estable para C pequeñas. Así que L2 es robusta frente a los cambios de C (de la regularización).
 
@@ -91,20 +85,20 @@ Podemos ver la que L2 tiene una curva más estable para C pequeñas. Así que L2
 La regularización L1 (Lasso) identifica a las 16 características como relevantes y por lo tanto no manda ninguna a cero. Aún así se pueden ver las diferencias de valores entre unas y otras.
 En cuanto a regularización L2 (Ridge), donde todos los coeficientes permanecen, se observa que los coeficientes significativos son los mismos que para L1.
 
-![Resultados1L1L2](Alba/images/coeficientesLASSO.npg)
+![Resultados1L1L2](Alba/images/coeficientesLASSO.png)
 
-![Resultados2L1L2](Alba/images/coeficientesRIDGE.npg)
+![Resultados2L1L2](Alba/images/coeficientesRIDGE.png)
 
 Ridge y Lasso aún así, tienen valores distintos para los coeficientes. Son diferencias pequeñas pero las hay, a pesar de que en este caso todo parece ser idéntico para ambas regularizaciones.
 
-![Resultados3L1L2](Alba/images/coeficientesL1L2enfuncionC.npg)
+![Resultados3L1L2](Alba/images/coeficientesL1L2enfuncionC.png)
 
 Podemos ver que tienen un desempeño similar pero que L2 es más robusto y estable tanto en Accuracy, AUC-ROC y LogLoss para C pequeñas.
 Con esta información decidimos aplicar esta C óptima al modelo regularizado con L2 (Ridge)  y poder observar la curva de aprendizaje que genera por si aparecen comportamientos no deseados.
 
-![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.npg)
+![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.png)
 
-![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.npg)
+![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.png)
 
 # PCA para reducción de dimensionalidad
 
@@ -113,13 +107,13 @@ Debido al número de características que tiene nuestro conjunto de datos y desp
 Al empezar el análisis de PCA se observa que con las dos primeras componentes principales solo se explica el 0,3 aprox de la varianza. Siguiendo esta vía, se grafica cuántas características principales se necesitan para explicar el 0,9 de la varianza. El resultado nos dice que son 11 características.
 Los resultados del modelo con este PCA son muy parecidos al modelo BASE pero con 5 características menos. 
 
-![PCA](Alba/images/PCA.npg)
+![PCA](Alba/images/PCA.png)
 
 `Accuracy = 0.9176`
 
-![PCA2](Alba/images/matrizconfusionPCA.npg)
+![PCA2](Alba/images/matrizconfusionPCA.png)
 
-![PCA3](Alba/images/curvaaprendizajePCA.npg)
+![PCA3](Alba/images/curvaaprendizajePCA.png)
 
 # Modelo con selección manual de Características
 
@@ -127,17 +121,17 @@ Debido al profundo estudio que hemos hecho de nuestros datos y del conocimiento 
 
 Características de la selección manual = `'n_inc_fees','n_recovery','n_fees','n_backs','n_cr_fe_w','BTC_GBP'`
 
-![Final1](Alba/images/coeficientesoddsFINAL.npg)
+![Final1](Alba/images/coeficientesoddsFINAL.png)
 
-![Final2](Alba/images/matrizconfusionFINAL.npg)
+![Final2](Alba/images/matrizconfusionFINAL.png)
 
 La curva de aprendizaje para este modelo tiene un comportamiento aceptable y sin signos de sobreajuste.
 
-![Final3](Alba/images/curvaaprendizajeFINAL.npg)
+![Final3](Alba/images/curvaaprendizajeFINAL.png)
 
 Hacemos Validación Cruzada para corroborar que nuestro modelo final tiene capacidad de generalización y tiene buen rendimiento.
 
-![Final4](Alba/images/kfoldFINAL.npg)
+![Final4](Alba/images/kfoldFINAL.png)
 
 **Importancia de las Características en el modelo final**
 
@@ -164,19 +158,27 @@ Una vez hecho todo este proceso, (como ya mencionamos el principio del análisis
 
 Lo que se observa al aplicar esta estandarización del `MinMaxScaler` es que la curva de aprendizaje no muestra un buen desempeño ya que se cruzan las líneas de los errores. Esto puede ser síntoma de un sobreajuste que podría explicarse debido a la mayor sensibilidad introducida por este escalador que al transofrmar los datos a un rango fijo [0,1] podrá hacer al modelo más sensible a ruidos o patrones específicos en el entrenamiento.
 
-![MinMax1](Alba/images/curvaaprendizajeMINMAX.npg)
+![MinMax1](Alba/images/curvaaprendizajeMINMAX.png)
 
-Antes de seguir, mostramos como la segmentación de los datos en `new_users`y `repetitive_users` no mejora el desempeño de nuestro modelo y por lo tanto se decide no tomar esto en cuenta.
+Antes de seguir, mostramos como la segmentación de los datos en `new_users`y `repetitive_users` no llega ni supera al desempeño de nuestro modelo y por lo tanto se decide no tomar esta posible segmentación en cuenta como mejora. Para los repetitivos nuestro modelo base no logra clasificar ningún Positivo verdadero. Con la regularización Lasso mejora mucho pero sigue sin alcanzar a nuestro modelo BASE que toma todos los datos.
 
-![Segmentación1](Alba/images/segmentacion.npg)
+![Segmentación1](Alba/images/repetitivos.png)
 
-Es por esto, que en el estudio comparativo final solo contemplaremos el proceso hecho con `StandardScaler` para la estandarización. Eso significa, **5 variantes del modelo de regresión logística** para los que estudiamos los resultados de cada uno para comparar y poder sacar conclusiones.
+![Segmentación2](Alba/images/comparacionrepetitivos.png)
 
-COMPARATIVA RESULTADOS MODELOS (ACCURACY, AUC-ROC, FN%, Ein, Eout) STDSCALER Y MANMIX y tambien NEW/REPETITIVE_USERS
+Para los usuarios nuevos (el primer registro de interacción que tenemos del usuario en nuestros datos) el modelo tampoco se desempeña tan bien como el que considera todos los datos. Aquí se puede observar una curva ROC menos ideal y una falta de capacidad del modelo para predecir los que necesitan control manual. 
 
-Con esta información que resume nuestros modelos, decidimos que para Regresión Logística nos quedamos con nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
-Aún así, para intentar mejorar la tasa de `Falsos Negativos` aplicamos una variación al umbral (`treshold`) y lo modificamos a `0.4`, hecho que minima estos FN al XXX%
+![Segmentación3](Alba/images/nuevos.png)
 
-RESULTADOS MODELO FINAL CON UMBRAL 0.4
+Es por esto, que en el estudio comparativo final solo contemplaremos el proceso hecho con `StandardScaler` para la estandarización y con la totalidad de los datos (tanto los usuarios repetitivos como los "nuevos"). Eso se traduce en **varios modelos de regresión logística** con distintos parámetros para los que estudiamos los resultados de cada uno y sacamos conclusiones.
+
+![Boxplotfinal](Alba/images/boxplotFINAL.png)
+
+Con esta información que resume nuestros modelos, decidimos que para Regresión Logística el mejor modelo es nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
+Una vez escogido, como sabemos que sin el balance de cargas el modelo se desempeñaba mejor, nos quedamos el que no tiene el balanceo y aplicamos una variación al umbral (`treshold`) para dejarlo en `0.4`, hecho que minimiza estos FN al **8.67%**.
+
+![Modelofinal](Alba/images/resultadosFINALumbral.png)
+
+![Modelofinal2](Alba/images/curvaaprendizajeFINALNOBALANCED.png)
 
 Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo objetivo para ver si tiene mejor desempeño y poder comparar. 
