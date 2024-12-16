@@ -2,7 +2,8 @@
 
 # Preliminares:
 - Características consideradas (JUSTIFICAR)
-- Conceptos base de la regresión logística (AMPLIAR ODDS)
+- Rellenar ceros (JUSTIFICAR)
+- Poner lo de news y repetitivo
 
 
 # Introducción
@@ -38,19 +39,25 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
 
 # Exploración de Datos
 
-Se calculó y visualizó la matriz de correlación para entender las relaciones entre las características. Esto ayudó a identificar si había posibles multicolinealidades.
+Se calculó y visualizó la matriz de correlación. Esto ayudó a identificar si había posibles multicolinealidades.
 
-FOTO MATRIZ DE CORRELACION 
+![MatrizCorrelación](Alba/images/matrizcorrelacionBASE.npg)
 
 # Modelo BASE
 
 Se dividen los datos en conjuntos de entrenamiento (80%) y prueba (20%). El modelo base es entrenado con `LogisticRegression` con el `solver='liblinear'` y con la penalización por defecto que es la L2.
 
-FOTO RESULTADOS BASE
+![Restultados1BASE](Alba/images/distribucionprobabilidadesBASE.npg)
+
+![Restultados2BASE](Alba/images/AccuracyBASE.npg)
+
+![Restultados3BASE](Alba/images/matrizconfusionBASE.npg)
+
+![Restultados4BASE](Alba/images/ROCcurveBASE.npg)
 
 La curva de aprendizaje de este modelo nos indica que todo parece fluir de manera correcta.
 
-CURVA APRENDIZAJE BASE
+![Restultados5BASE](Alba/images/curvaaprendizajeBASE.npg)
 
 # Regularización L1 y L2
 
@@ -59,7 +66,9 @@ Se aplica regularización para intentar reducir la cantidad de características 
 - Lasso (L1): Se implementa con el `penalty_solver='l1'` y el `solver='saga'` para promover la selección de características.
 - Ridge (L2): Se implementa con el `penalty_solver='l2'` y el `solver='lbfgs'` para reducir la varianza y evitar sobreajuste.
 
-FOTO RESULTADOS L1 Y L2
+`Accuracy L1 (LASSO): 0.9175`
+
+`Accuracy L2 (Ridge): 0.9175`
 
 Esta regularización se ha aplicado con el valor `C=1`. C es el inverso de α, que es la que mide la intensidad de la penalización. Por lo tanto, para α pequeñas (penalización leve) tenemos C muy grandes. Y en cambio para α grandes (penalización fuerte) tenemos C pequeñas. Este detalle es importante para entender que nuestro parámetro de regularización C es inversamente proporcional a la intensidad de la penalización.
 
@@ -68,25 +77,34 @@ Esta regularización se ha aplicado con el valor `C=1`. C es el inverso de α, q
 Se utilizó `LogisticRegressionCV` con validación cruzada para poder encontrar los valores óptimos de C, de manera que se aplica la penalización justa que encuentra el mejor desempeño del modelo.
 Los resultados obtenidos son:
 
-- L1 (Lasso) obtiene C óptimo = 2,78
-- L2 (Ridge) obtiene C óptimo = 166,81
+- L1 (Lasso) obtiene `C óptimo = 2,78`
+- L2 (Ridge) obtiene `C óptimo = 166,81`
 
-Esto significa que para L1 óptima aplica una penalización más fuerte que para L2 óptima.
+Esto significa que para L1 la C óptima aplica una penalización más fuerte que para L2.
+
+![Resultados1C](Alba/images/AccuracyVSC.npg)
+
+Podemos ver la que L2 tiene una curva más estable para C pequeñas. Así que L2 es robusta frente a los cambios de C (de la regularización).
 
 # Selección de coeficientes
 
 La regularización L1 (Lasso) identifica a las 16 características como relevantes y por lo tanto no manda ninguna a cero. Aún así se pueden ver las diferencias de valores entre unas y otras.
-En cuanto a regularización L2 (Ridge), donde todos los coeficientes permanecen, se observa que los coeficientes significativos son similares a L1.
+En cuanto a regularización L2 (Ridge), donde todos los coeficientes permanecen, se observa que los coeficientes significativos son los mismos que para L1.
 
-FOTO RESULTADOS COLUMNAS L1 Y L2
+![Resultados1L1L2](Alba/images/coeficientesLASSO.npg)
 
-Cuando mostramos los gráficos de los coeficientes en función del ajuste de la regularización (del valor C) se puede ver que L1 induce a esparsidad mientras que L2 ajusta gradualmente los pesos.
+![Resultados2L1L2](Alba/images/coeficientesRIDGE.npg)
 
-FOTO RESULTADOS EFECTO REGULARIZACION SEGÚN C
+Ridge y Lasso aún así, tienen valores distintos para los coeficientes. Son diferencias pequeñas pero las hay, a pesar de que en este caso todo parece ser idéntico para ambas regularizaciones.
 
-Con esta información decidimos aplicar esta C óptima al modelo regularizado con L2  y poder observar la curva de aprendizaje que genera por si aparecen comportamientos no deseados.
+![Resultados3L1L2](Alba/images/coeficientesL1L2enfuncionC.npg)
 
-CURVA APRENDIZAJE L2 
+Podemos ver que tienen un desempeño similar pero que L2 es más robusto y estable tanto en Accuracy, AUC-ROC y LogLoss para C pequeñas.
+Con esta información decidimos aplicar esta C óptima al modelo regularizado con L2 (Ridge)  y poder observar la curva de aprendizaje que genera por si aparecen comportamientos no deseados.
+
+![Resultados4L1L2](Alba/images/matrizconfusionRIDGE.npg)
+
+![Resultados5L1L2](Alba/images/curvaaprendizajeRIDGE.npg)
 
 # PCA para reducción de dimensionalidad
 
@@ -95,9 +113,13 @@ Debido al número de características que tiene nuestro conjunto de datos y desp
 Al empezar el análisis de PCA se observa que con las dos primeras componentes principales solo se explica el 0,3 aprox de la varianza. Siguiendo esta vía, se grafica cuántas características principales se necesitan para explicar el 0,9 de la varianza. El resultado nos dice que son 11 características.
 Los resultados del modelo con este PCA son muy parecidos al modelo BASE pero con 5 características menos. 
 
-FOTO RESULTADOS PCA
+![PCA](Alba/images/PCA.npg)
 
-CURVA APRENDIZAJE PCA
+`Accuracy = 0.9176`
+
+![PCA2](Alba/images/matrizconfusionPCA.npg)
+
+![PCA3](Alba/images/curvaaprendizajePCA.npg)
 
 # Modelo con selección manual de Características
 
@@ -105,15 +127,17 @@ Debido al profundo estudio que hemos hecho de nuestros datos y del conocimiento 
 
 Características de la selección manual = `'n_inc_fees','n_recovery','n_fees','n_backs','n_cr_fe_w','BTC_GBP'`
 
-FOTO RESULTADOS MODELO_FINAL
+![Final1](Alba/images/coeficientesoddsFINAL.npg)
+
+![Final2](Alba/images/matrizconfusionFINAL.npg)
 
 La curva de aprendizaje para este modelo tiene un comportamiento aceptable y sin signos de sobreajuste.
 
-CURVA DE APRENDIZAJE MODELO FINAL
+![Final3](Alba/images/curvaaprendizajeFINAL.npg)
 
 Hacemos Validación Cruzada para corroborar que nuestro modelo final tiene capacidad de generalización y tiene buen rendimiento.
 
-RESULTADOS KFOLD
+![Final4](Alba/images/kfoldFINAL.npg)
 
 **Importancia de las Características en el modelo final**
 
