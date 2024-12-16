@@ -1,14 +1,38 @@
-# Proyecto Pasta Loca 2
+# Proyecto Pasta Loca II
 
-## Equipo del Proyecto
+#### Equipo del Proyecto
 
 El equipo detrás de este análisis está compuesto por:
 
-- **Francesc Pujol Contreras**: *Data Engineer*. Responsable de la limpieza de bases de datos, creación de pipelines de datos y desarrollo de librerías utilizadas por los analistas.
+- **Francesc Pujol Contreras**: *Data Engineer & Novice Data Scientist*. Responsable de la limpieza de bases de datos, creación de pipelines de datos y desarrollo de librerías utilizadas por los analistas.
   
 - **Maria Alba Godoy Dominguez**: *Data Scientist*. Responsable del desarrollo y optimización de los modelos predictivos.
 
 - **Alejandro Manzano**: *Business Analyst*. Responsable de realizar el análisis funcional previo del "As Is" de lo que se busca optimizar, recopilar variables externas y análisis del contexto del negocio.
+
+
+
+## Business Payments
+
+### Introducción
+
+Business Payments, una empresa de servicios financieros de vanguardia, ha estado ofreciendo soluciones innovadoras de adelanto de efectivo desde su creación en 2020. Con un compromiso de proporcionar adelantos de dinero gratuitos y precios transparentes, Business Payments ha logrado construir una base de usuarios sólida. Como parte de su esfuerzo continuo por mejorar sus servicios y entender el comportamiento de los usuarios, Business Payments ha encargado un proyecto para realizar un análisis avanzado de insights y cohortes.
+
+## Visión General del Proyecto
+
+**Resumen para la Visión General del Proyecto:**
+
+El proyecto tiene como objetivo proporcionar un sistema de moderación, con el fin de optimizar el proceso por el que la empresa evalúa la concesión de prestamos a sus clientes.
+
+Algunas de las tareas incluyen:
+
+* Un análisis exhaustivo de tendencias y patrones temporales en series de tiempo.
+* El uso de técnicas avanzadas de segmentación para identificar comportamientos relevantes dentro de los datos.
+* La implementación de modelos de regresión y clasificación para predecir resultados y hacer moderaciones más precisas.
+
+Nuestro objetivo es desarrollar un modelo mejorado de moderación que dependa de la evolución de la cartera de clientes, para disponer de un sistema robusto, escalable que pueda producir resultados precisos.
+
+
 
 ## Objetivos del Proyecto
 
@@ -17,7 +41,101 @@ El equipo detrás de este análisis está compuesto por:
 Crear un modelo que nos ayude a predecir si un nuevo *cash request* (CR) va a necesitar control manual o no.  
 El objetivo es optimizar el control manual y activarlo solo para casos necesarios, mejorando así la gestión de recursos.
 
-## **"AS IS" Manual Check**
+
+
+## Contexto: Estructura de los Datos
+
+En este apartado mostramos cada uno de los registros contenidos en las tablas de nuestra base de datos. Este proceso, es fundamental para comprender la estructura y contenido de nuestros datos. Al hacerlo, podemos identificar con más facilidad las características que se explican en el análisis posterior.
+
+### Cash_Request (CR)
+
+##### CR.Status
+
+- **money_back**: El CR fue reembolsado exitosamente.
+
+---
+
+- **active**: Los fondos fueron recibidos en la cuenta del cliente.
+- **direct_debit_sent**:  Se envió un débito directo SEPA, pero aún no se confirma el resultado
+
+---
+
+- **rejected**: El CR necesitó una revisión manual y fue rechazado.
+- **direct_debit_rejected**: El intento de débito directo SEPA falló.
+- **transaction_declined**:  No se pudo enviar el dinero al cliente.
+- **canceled**: El usuario no confirmó el CR en la app, fue cancelado automáticamente. 
+
+---
+
+**En los datos proporcionados, NO aparecen los valores:** 
+
+- approved : CR is a 'regular' one (= without fees) and was approved either automatically or manually. Funds will be sent aprox. 7 days after the creation
+- money_sent : We transferred the fund to the customer account. Will change to active once we detect that the user received the funds (using user's bank history)
+- pending : The CR is pending a manual review from an analyst
+- waiting_user_confirmation : The user needs to confirm in-app that he want the CR (for legal reasons)
+- waiting_reimbursement : We were not able to estimate a date of reimbursement, the user needs to choose one in the app.
+
+
+##### CR.Transfer Type
+
+- **instant**: El usuario eligió recibir el adelanto instantáneamente. 
+- **regular**: El usuario eligió no pagar inmediatamente y esperar la transferencia. 
+
+
+##### CR.Recovery Status
+
+- **null**: El CR nunca tuvo un incidente de pago.
+- **completed**: El incidente de pago fue resuelto (el CR fue reembolsado).
+
+---
+
+- **pending**: El incidente de pago aún está abierto.
+- **pending_direct_debit**: El incidente de pago sigue abierto, pero se ha lanzado un débito directo SEPA.
+
+### Fees (FE)
+
+##### FE.Type
+
+- **instant_payment**: Fees por adelanto instantáneo. (send directly after user's request, through SEPA Instant Payment)
+- **split_payment**: Fees por pago fraccionado (en caso de un incidente). (futures fees for split payment (in case of an incident, we'll soon offer the possibility to our users to reimburse in multiples installements))
+- **incident**: Fees por fallos de reembolsos.
+- **postpone**: Fees por la solicitud de posponer un reembolso. 
+
+##### FE.Status (= does the fees was successfully charged)
+
+- **accepted**: El fee fue cobrado exitosamente.
+- **confirmed**: El usuario completó una acción que creó un fee.
+
+---
+
+- **rejected**: El último intento de cobrar el fee falló.
+- **cancelled**: El fee fue creado pero cancelado por algún motivo. 
+
+##### FE.Category
+
+- **rejected_direct_debit**: Fees creados cuando el banco del usuario rechaza el primer débito directo.
+- **month_delay_on_payment**: Fees creados cada mes hasta que el incidente se cierre.
+
+---
+
+- **null**: No figura a la documentacio
+
+##### FE.paid_at:	
+
+- Timestamp of the fee's payment
+
+##### FE.charge_moment (When the fee will be charge).
+
+- **before**: El fee se cobra en el momento de su creación.
+- **after**: El fee se cobra cuando el CR es reembolsado.
+
+##### FE.total_amount
+
+- Amount of the fee (including VAT)
+
+
+
+## "AS IS" Manual Check
 
 ### Diagrama de Flujo del Servicio Actual
 
@@ -54,12 +172,12 @@ Para nosotros, un CR lo etiquetamos como necesario de realizar control manual ba
 
 - **Gráfico de conclusión 2**:  
   Muestra el comportamiento de los CR a controlar a lo largo del tiempo.  
-  ![Total CR vs Manual Check](Alejandro\asis\as_is_manual_check.png)
+  ![Total CR vs Manual Check](Alejandro/asis/as_is_manual_check.png)
 
 - **Gráfico de conclusión 4**:  
   Analiza la relación entre el rendimiento de los manual checks y la eficiencia a lo largo de las semanas.  
-  ![Análisis Manual Check](Alejandro\asis\manual_check_analysis.png)  
-  ![Eficiencia vs Porcentaje](Alejandro\asis\percentage_vs_efficency.png)
+  ![Análisis Manual Check](Alejandro/asis/manual_check_analysis.png)  
+  ![Eficiencia vs Porcentaje](Alejandro/asis/percentage_vs_efficency.png)
 
 ---
 
@@ -67,7 +185,7 @@ Para nosotros, un CR lo etiquetamos como necesario de realizar control manual ba
 
 El crecimiento casi exponencial de los CR que debieron haber sido controlados manualmente y no lo fueron se debe a la falta de criterios claros y herramientas eficaces para seleccionar los casos a controlar. Este problema se refleja en el bajo rendimiento de los controles manuales, que estuvo por debajo del 60% debido a una falta de optimización en la gestión de recursos.
 
-  ![CR susceptibles a problemas no controlados](Alejandro\asis\CR_no_check_and_should.png)
+  ![CR susceptibles a problemas no controlados](Alejandro/asis/CR_no_check_and_should.png)
 
 ### Solución Propuesta
 
@@ -78,7 +196,7 @@ Proponemos la creación de un modelo predictivo que identifique qué casos reque
 ### Diagrama de Flujo del Nuevo Servicio
 
 Este modelo ayudará a identificar los casos que realmente requieren control manual, optimizando así los recursos y mejorando la eficiencia de los procesos.  
-![Nuevo Diagrama de Flujo](Alejandro\asis\new_client_requests_CR.png)
+![Nuevo Diagrama de Flujo](Alejandro/asis/new_client_requests_CR.png)
 
 ---
 
@@ -90,17 +208,715 @@ Este modelo no solo reducirá la carga operativa al eliminar controles innecesar
 
 ---
 
-## **Modelos utilizando modelos del tipo arbol de desicion: RandomForest**
+
+
+## Fuentes de información exógenas 
+
+> [!NOTE]  
+>
+> 12. **Uso de Scraping para Variables Exógenas**: El proyecto debe incluir el uso de técnicas de web scraping para obtener variables adicionales de fuentes externas que aporten valor a los datos originales del proyecto.
+
+
+
+Para las fuentes externas de datos, no ha sido necesario realizar scrapping. Nos encontramos con tres situaciones distintas:
+
+
+
+### Indice de precios al consumo IPC en UK
+
+![image-20241216092153709](./README.assets/image-20241216092153709.png) 
+
+```python
+#Fuente: https://www.statista.com/statistics/306648/inflation-rate-consumer-price-index-cpi-united-kingdom-uk/
+data = {
+    'Date': ['11-2019', '12-2019', '01-2020', '02-2020', '03-2020', '04-2020', '05-2020', 
+                '06-2020', '07-2020', '08-2020', '09-2020', '10-2020', '11-2020'],
+    'inflation': [1.3, 1.3, 1.8, 1.7, 1.5, 0.8, 0.5, 0.6, 1.0, 0.2, 0.5, 0.7, 0.7] 
+    }
+
+# DataFrame original con datos diarios
+data_inflation = pd.DataFrame(data)
+
+# Convertir la columna 'Date' a tipo datetime con formato mensual
+data_inflation['Date'] = pd.to_datetime(data_inflation['Date'], format='%m-%Y')
+
+# Crear un rango de fechas que abarque el mes correspondiente para cada fila
+data_inflation = data_inflation.set_index('Date').resample('D').ffill().reset_index()
+
+# Renombrar columna a 'Inflation (%)'
+data_inflation.rename(columns={'index': 'Date'}, inplace=True)
+data_inflation['Date'] = data_inflation['Date'].dt.date
+
+# Unir ambos DataFrames por la columna de fecha
+df_jo = pd.merge(df_jo, data_inflation, left_on='created_at_d', right_on='Date', how='left')
+
+```
+
+> Caso donde dado el formato gráfico de la web y que requiere registro para descargar los datos,  es más fácil obtener los datos a mano e incorporarlos directamente en el dataframe
+
+
+
+
+
+### Indice de desempleo en UK
+
+https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
+
+![image-20241216091531523](./README.assets/image-20241216091531523.png) 
+
+```python
+# #Fuente csv: https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
+df_employ["Date"] = pd.to_datetime(df_employ["Title"], format="%Y %b", errors="coerce")
+df_employ = df_employ[df_employ["Date"].notna()]
+df_employ = df_employ.drop(columns=['Title'])
+df_employ = df_employ.rename(columns={'Unemployment rate (aged 16 and over, seasonally adjusted): %': 'unemploy_rate'})
+df_employ = df_employ.drop_duplicates('Date')
+df_employ['Date'] = pd.to_datetime(df_employ['Date'], format='%m-%Y')
+df_employ = df_employ.set_index('Date').resample('D').ffill().reset_index()
+df_employ['Date'] = df_employ['Date'].dt.date
+cls.add_df(df_employ,"employ")
+
+# Unir ambos DataFrames por la columna de fecha
+df_jo = pd.merge(df_jo, df_employ, left_on='created_at_d', right_on='Date', how='left')
+        
+```
+
+> Caso donde podemos descargar un .csv directamente, solo debemos manipular el formato de los datos importados.
+
+
+
+### Valor de cambio divisa EUR-GBP
+
+![image-20241216093101972](./README.assets/image-20241216093101972.png) 
+
+```python
+def fetch_and_prepare_data(ticker, column_name):
+    """Descarga datos históricos de un ticker y los prepara con columnas específicas."""
+    data = yf.download(ticker, start=date_start, end=date_end)[['Close']].reset_index()
+    data.columns = ['Date', column_name]
+    data['Date'] = pd.to_datetime(data['Date']).dt.date
+    return data
+
+# Descargar y preparar datos
+exchange_rate = fetch_and_prepare_data('GBPEUR=X', 'GBP to EUR')
+btc_gbp_data = fetch_and_prepare_data('BTC-GBP', 'BTC to GBP')
+
+# Crear un DataFrame con todas las fechas del rango
+daily = pd.DataFrame({'Date': pd.date_range(start=date_start, end=date_end, freq='D').date})
+
+# Unir datos y llenar valores faltantes con 0
+divisa_exogenas = daily.merge(exchange_rate, on='Date', how='left').fillna(0)
+divisa_exogenas = divisa_exogenas.merge(btc_gbp_data, on='Date', how='left').fillna(0)
+
+```
+
+> Usar la API que ofrece la web para descargar directamente los datos, en este caso, el cambio de libras: GBP to EUR y el de Bitcoin: BTC to GBP
+>
+> En la implementación completa, guardamos los datos obtenidos en local para no repetir la descarga en sucesivas ejecuciones del código, salvo que le indiquemos a la librería que reinicie la información almacenada. 
+
+
+
+### Análisis de Series Temporales y Ruido asociado
+
+>  [!NOTE]
+>
+>  (1) **Análisis de Series de Tiempo**: Realizar un análisis exhaustivo de las tendencias y patrones temporales presentes en los datos.
+
+
+
+
+
+
+![png](./README.assets/1.EDA_72_0.png)
+    
+
+> Se aprecia un aspecto incremental de los datos al ver la evolución a lo largo del periodo.
+
+
+
+​    ![png](./README.assets/1.EDA_92_0.png)
+​    
+
+
+![png](./README.assets/1.EDA_92_1.png)
+    
+
+![png](./README.assets/1.EDA_93_0.png)
+    ..
+
+  ![png](./README.assets/1.EDA_94_0.png)
+​    ..
+
+​    ![png](./README.assets/1.EDA_95_0.png)
+​    
+
+
+
+```
+# Aqui claramente, estan filtrada las que se han completado correctamente.
+```
+
+![png](./README.assets/1.EDA_96_0.png)
+
+
+
+## Análisis Exploratorio de Datos (EDA)
+
+>  [!NOTE] 
+>
+>  (2) **Análisis Exploratorio de Datos (EDA)**: Identificar patrones, anomalías y relaciones entre las variables mediante visualizaciones y estadísticas descriptivas.
+
+
+
+### Estudio de registros de status
+
+#### Cash_Request (CR)
+
+
+```python
+counts = cr_cp.status.value_counts()
+display(counts)
+
+counts = cr_cp.transfer_type.value_counts()
+display(counts)
+
+counts = cr_cp.recovery_status.value_counts()
+display(counts)
+
+counts = cr_cp.money_back_date.value_counts()
+display(counts)
+```
+
+##### CR.Status (23970 registros)
+
+- **money_back**: 16397 registros. El CR fue reembolsado exitosamente.
+- **rejected**: 6568 registros. El CR necesitó una revisión manual y fue rechazado.
+- **direct_debit_rejected**: 831 registros. El intento de débito directo SEPA falló.
+- **active**: 59 registros. Los fondos fueron recibidos en la cuenta del cliente.
+- **transaction_declined**: 48 registros. No se pudo enviar el dinero al cliente.
+- **canceled**: 33 registros. El usuario no confirmó el CR en la app, fue cancelado automáticamente.
+- **direct_debit_sent**: 34 registros. Se envió un débito directo SEPA, pero aún no se confirma el resultado.
+
+
+    status
+    money_back               16395
+    rejected                  6568
+    direct_debit_rejected      831
+    active                      59
+    transaction_declined        48
+    direct_debit_sent           34
+    canceled                    33
+    Name: count, dtype: int64
+
+#### Tras el merge:
+
+| CR Status             | Regs(join y limpiar) |
+| --------------------- | :------------------- |
+| money_back            | 23268                |
+| rejected              | 6568                 |
+| direct_debit_rejected | 1941                 |
+| active                | 158                  |
+| direct_debit_sent     | 74                   |
+| transaction_declined  | 48                   |
+| canceled              | 35                   |
+
+##### CR.Transfer Type
+
+- **instant**: El usuario eligió recibir el adelanto instantáneamente.
+- **regular**: El usuario eligió no pagar inmediatamente y esperar la transferencia.
+
+```
+transfer_type
+instant    13882
+regular    10086
+Name: count, dtype: int64
+```
+
+#### Tras el merge:
+
+| transfer_type | regs(join y limpiar) |
+| ------------- | :------------------- |
+| instant       | 19488                |
+| regular       | 12604                |
+
+
+##### CR.Recovery Status
+
+- **null**: El CR nunca tuvo un incidente de pago.
+- **completed**: El incidente de pago fue resuelto (el CR fue reembolsado).
+- **pending**: El incidente de pago aún está abierto.
+- **pending_direct_debit**: El incidente de pago sigue abierto, pero se ha lanzado un débito directo SEPA.
+
+
+```
+recovery_status
+nice                    20639
+completed                2467
+pending                   845
+pending_direct_debit       16
+cancelled                   1
+Name: count, dtype: int64
+```
+
+#### Tras el merge:
+
+| recovery_status      | regs(join y limpiar) |
+| -------------------- | :------------------- |
+| nice (null)          | 24893                |
+| completed            | 5166                 |
+| pending              | 1996                 |
+| pending_direct_debit | 36                   |
+| cancelled            | 1                    |
+
+
+
+#### Fees (FE)
+
+```python
+counts = fe_cp.status.value_counts()
+display(counts)
+
+counts = fe_cp.type.value_counts()
+display(counts)
+
+counts = fe_cp.category.value_counts()
+display(counts)
+
+counts = fe_cp.charge_moment.value_counts()
+display(counts)
+```
+
+##### FE.Type
+
+- **instant_payment**: Fees por adelanto instantáneo.
+- **split_payment**: Fees por pago fraccionado (en caso de un incidente).
+- **incident**: Fees por fallos de reembolsos.
+- **postpone**: Fees por la solicitud de posponer un reembolso.
+
+```
+type
+instant_payment    11095
+postpone            7766
+incident            2196
+Name: count, dtype: int64
+```
+
+#### Tras el merge:
+
+| type            | regs(join y limpiar) |
+| --------------- | :------------------- |
+| instant_payment | 11095                |
+| nice  (null)    | 11037                |
+| postpone        | 7765                 |
+| incident        | 2195                 |
+
+##### FE.Status
+
+- **confirmed**: El usuario completó una acción que creó un fee.
+- **rejected**: El último intento de cobrar el fee falló.
+- **cancelled**: El fee fue creado pero cancelado por algún motivo.
+- **accepted**: El fee fue cobrado exitosamente.
+
+
+    status
+    accepted     14841
+    cancelled     4934
+    rejected      1194
+    confirmed       88
+    Name: count, dtype: int64
+
+#### Tras el merge:
+
+| stat_fe   | regs(join y limpiar) |
+| --------- | :------------------- |
+| accepted  | 14839                |
+| cancelled | 4934                 |
+| rejected  | 1194                 |
+| confirmed | 88                   |
+
+##### FE.Category
+
+- **rejected_direct_debit**: Fees creados cuando el banco del usuario rechaza el primer débito directo.
+- **month_delay_on_payment**: Fees creados cada mes hasta que el incidente se cierre.
+- **null**: No figura en la documentación
+
+
+```
+category
+nice                      18861
+rejected_direct_debit      1599
+month_delay_on_payment      597
+Name: count, dtype: int64
+```
+
+#### Tras el merge:
+
+| category               | regs(join y limpiar) |
+| ---------------------- | :------------------- |
+| nice  (null)           | 18860                |
+| rejected_direct_debit  | 1598                 |
+| month_delay_on_payment | 597                  |
+
+##### FE.Charge Moment
+
+- **before**: El fee se cobra en el momento de su creación.
+- **after**: El fee se cobra cuando el CR es reembolsado.
+
+
+```
+charge_moment
+after     16720
+before     4337
+Name: count, dtype: int64
+```
+
+#### Tras el merge:
+
+| charge_moment | Regs(join y limpiar) |
+| ------------- | :------------------- |
+| after         | 16719                |
+| before        | 4336                 |
+
+### Elaboración de nuevas columnas 
+
+A medida que hemos ido analizando los datos, se ha determinado que debemos crear una serie de columnas para poder identificar los usuarios (`user_id`) que deberían ser moderados:
+
+#### 1. `needs_m_check_recov`
+
+```python
+df['needs_m_check_recov'] = ~(is_good_cr & is_good_fe & recovery_status_nice)
+```
+
+- Indica si un usuario tiene un historial donde si crédito o feed no ha sido consistente o ha tenido problemas en recuperación (estado distinto a `'nice'`).
+
+- La usamos para Identifica usuarios con historial problemático, que podrían tener mayor riesgo de incumplir con nuevos créditos. Estos son **los que consideramos, deberían ser moderados**.
+
+  
+
+#### Respecto a los ingresos
+
+#### 2. `n_backs`
+
+```python
+unique_cr = money_back & (df['amount'] > 0) & ~df.duplicated(subset=['id_cr'], keep='first')
+df['n_backs'] = unique_cr.groupby(df['user_id']).cumsum()
+```
+
+- Indica el número acumulado de transacciones únicas con estado `money_back` e importe positivo.
+- El objetivo es identificar en el cliente un historial elevado de devoluciones, que podría indicar problemas recurrentes con pagos o acuerdos previos, aumentando el riesgo de futuros incumplimientos.
+
+#### 3. `n_fees`
+
+```python
+df['n_fees'] = money_back & fee_accepted & (df['fee'] > 0)
+df['n_fees'] = df.groupby('user_id')['n_fees'].cumsum()
+```
+
+- Indica el número acumulado de transacciones donde  el crédito tiene estado `money_back`,  la feed fue aceptada (`fee_accepted`) y se aplicó un cobro (`fee > 0`).
+- Nos permite identifica usuarios con un historial de múltiples devoluciones de prestamos asociadas a feeds aceptadas. Esto puede reflejar un comportamiento recurrente relacionado con la estabilidad en prestamos futuros.
+
+#### Respecto a la incidencias
+
+#### 4. `n_inc_back`
+
+```python
+df['n_inc_back'] = ~is_good_cr
+df['n_inc_back'] = df.groupby('user_id')['n_inc_back'].cumsum()
+```
+
+- Indica el número acumulado de créditos con estados "malos" (no están en `good_cr`).
+- Refleja un historial de créditos irregular o problemático, lo que puede ser un indicador de riesgo para nuevos créditos.
+
+------
+
+#### 5. `n_inc_fees`
+
+```python
+df['n_inc_fees'] = (~is_good_fe | bad_recovery_status_fe)
+df['n_inc_fees'] = df.groupby('user_id')['n_inc_fees'].cumsum()
+```
+
+- Indica el número acumulado de feeds "malos" o problemas en la devolución.
+- Nos ayuda a detectar problemas históricos en los feeds y estados de recuperación. Estos pueden influir en la probabilidad de que el usuario tenga dificultades en nuevos futuros.
+
+#### 6. `n_recovery`
+
+```python
+df['n_recovery'] = ~recovery_status_nice
+df['n_recovery'] = df.groupby('user_id')['n_recovery'].cumsum()
+```
+
+- Indica el número acumulado de incidencias en recuperación (estados distintos a `'nice'`).
+- Consideramos que un alto número de incidencias en recuperación es un buen indicador de usuarios con un historial financiero inestable, lo que podría traducirse en mayor riesgo.
+
+#### 7. `n_cr_fe_w`
+
+- Indica la frecuencia semanal de combinaciones de Cash Request y feeds por usuario.
+- Ayuda a  identificar usuarios que tienen un historial de alta frecuencia en solicitudes o transacciones. Aunque no necesariamente es un problema, frecuencias excesivamente altas pueden ser una señal de usuarios dependientes de créditos, lo que podría implicar mayor riesgo.
+
+#### 8. `created_at_slot`
+
+```python
+df['created_at_slot'] = df['created_at'].dt.hour
+```
+
+- La hora en la que se realizó la acción (por ejemplo, solicitud o pago).
+- Algunos usuarios problemáticos podrían mostrar patrones temporales específicos, como operar fuera de horarios comerciales. Este dato puede servir para identificar correlaciones entre la hora de actividad y el comportamiento futuro.
+
+------
+
+#### 9. `created_at_dow`
+
+```python
+df['created_at_dow'] = df['created_at'].dt.dayofweek
+```
+
+- El día de la semana en que se realizó la acción (lunes a domingo).
+- Similar a `created_at_slot`, nos ayuda a analizar si hay patrones semanales de usuarios que tienden a ser problemáticos (por ejemplo, solicitudes recurrentes en fines de semana podrían correlacionarse con menor estabilidad en pagos).
+
+## ANÁLISIS
+
+>  [!NOTE]  
+>
+>  (4) **Análisis Gráfico de los Datos**: Representar gráficamente las variables mediante gráficos como histogramas, diagramas de dispersión, boxplots, entre otros, para facilitar la comprensión visual de los datos.
+
+### Visión global de datos
+
+
+​    
+![png](./README.assets/1.EDA_36_0.png)
+​    
+
+
+
+
+![png](./README.assets/1.EDA_36_1.png)
+    
+
+----
+
+
+
+![png](./README.assets/1.EDA_37_0.png)
+    
+
+---
+
+
+
+### Gráficos para Visualización de Datos
+
+#### Evolución de la base de usuarios
+
+![png](./README.assets/1.EDA_79_0.png)
+​    
+
+#### Usuarios eliminados
+
+![png](./README.assets/1.EDA_80_0.png)
+​    
+
+
+    Total activos: 11938
+    Total eliminados: 1141
+
+
+
+### Estudio de casos de clientes concretos (user_id):
+
+Nos ha resultado muy útil consultar los datos con un pequeño bloque de código en vez de recurrir constantemente a una hoja de calculo.
+
+![image-20241216150732119](./README.assets/image-20241216150732119.png)
+
+> Lista de clientes con los que hemos examinando los detalles.  (podemos mostrar o examinar casos específicos). 
+
+Clientes que identificamos como "Vips" al examinar en detalle su cantidad de prestamos:
+
+* 90 Este parece que se esté gestionando mal: todos instant, con demoras y sin gestión aparente ?.
+
+* 1946 Parece un ejemplo de buena gestión, al final tiene un instant y se le ha dado margen en las demoras.
+
+* 1987 Parece un ejemplo de buen usuario, se pasa a instant para siempre.
+
+* Algunos más: 
+
+* 13851 2002  526 12934 12274 54879 12441 13851 16391 430  63894 18730 10116 21465 99000262
+
+* 102105  13851  19655 21465 14631
+
+
+
+
+```python
+user_id = 2002# 16391 # 2002, 1987, 13851, 16391, 102105
+display(cohort_analysis_2[cohort_analysis_2.user_id == user_id])
+
+#print("Casos segun Cash Request ID")
+pd.options.display.max_columns = None
+for id in ([-8177]): # 16391 20108, 20104, 20112,
+    df_t = df_jo[df_jo['id_cr'] == id].sort_values(['created_at','created_at_fe']).reset_index()
+    print(f"Cash Request ID: {id}")
+    display(df_t[fields])
+
+user_ids = [user_id] 
+pd.options.display.max_columns = None
+#print("Casos segun Cash User ID")
+for id in (user_ids):
+    df_t = df_jo[(df_jo['user_id'] == id)]#.reset_index()
+    df_t = df_t[df_t['stat_cr'] == 'money_back']
+    df_t = df_t[df_t['stat_fe'] == 'accepted']
+    
+    df_t = df_t.sort_values(['created_at','created_at_fe']).reset_index(drop=True)
+    #df_t.set_index('id_cr', inplace=True)
+    print(f"Only money_back - user_id {id}")
+    display(df_t[fields])
+    df_t = df_jo[(df_jo['user_id'] == id) ].sort_values(['created_at','created_at_fe']).reset_index(drop=True)
+
+    print(f"user_id {id}")
+    display(df_t[fields])
+```
+
+
+
+### Estudio de top FEES  
+
+
+| **user_id** | **fees** |
+| :---------: | :------- |
+|    17144    | 75.0     |
+|    12934    | 55.0     |
+|    13404    | 35.0     |
+|    6219     | 35.0     |
+|    17603    | 35.0     |
+|    8944     | 35.0     |
+|  99021532   | 35.0     |
+|    1987     | 35.0     |
+|    9199     | 35.0     |
+|    23164    | 35.0     |
+
+
+
+---
+
+
+
+### Exploración de la temporalidad:
+
+![png](./README.assets/1.EDA_97_0.png)
+    
+
+![png](./README.assets/1.EDA_97_1.png)
+    
+
+## Segmentación
+
+>  [!NOTE]
+>
+>  (5) **Segmentación Inteligente de los Datos**: Implementar técnicas de segmentación avanzadas que aporten valor al análisis y la extracción de insights relevantes.
+
+### Clientes respecto a han sido moderados
+
+    Usuarios nuevos: 5027
+    moderados: 21757
+    no moderados: 10335
+
+### Histogramas
+
+![png](./README.assets/1.EDA_78_1.png)![png](./README.assets/1.EDA_78_3.png)
+
+> 
+
+![png](./README.assets/1.EDA_78_5.png)
+
+> 
+
+​    
+![png](./README.assets/1.EDA_57_0.png)
+​    
+
+
+
+
+![png](./README.assets/1.EDA_57_1.png)
+    
+
+
+
+
+![png](./README.assets/1.EDA_57_2.png)
+    
+
+
+
+
+![png](./README.assets/1.EDA_57_3.png)
+    
+
+
+
+### Campos cualitativos a cuantitativos
+
+
+![png](./README.assets/1.EDA_69_0.png)
+    
+
+
+    Variables altamente correlacionadas con otras:
+    ['created_at',
+     'to_receive_ini',
+     'to_reimbur_cash',
+     'to_end',
+     'to_send',
+     'send_at',
+     'moderated_at']
+
+
+
+>  [!NOTE] 
+>
+>  (7) **Análisis de Outliers**: Detectar y tratar los valores atípicos (outliers) presentes en los datos para mejorar la precisión de los modelos.
+
+
+### Plazos de los prestamos
+
+
+![png](./README.assets/1.EDA_99_0.png)
+    
+
+### Tiempo en el que la empresa realmente ha prestado el dinero
+
+![png](./README.assets/1.EDA_99_1.png)
+    
+
+#### Outliers encontrados
+
+![png](./README.assets/1.EDA_100_1.png)
+    .
+
+---
+
+..
+
+![png](./README.assets/1.EDA_77_0.png)
+    
+
+---
+
+---
+
+
+
+## Modelos utilizando modelos del tipo arbol de desicion: RandomForest
 
 Lo primero que hacemos antes de comenzar a modelar es ver como estan divididas las lineas entre:
 1) Primeras operaciones de un id_user (new_users)
 2) Segundas y posteriores operaciones de un id_user (rep_users)
 
-![Segmentacion de Dataframes](Alejandro\exploring_data\dataset_rep_vs_new.png)
+![Segmentacion de Dataframes](Alejandro/exploring_data/dataset_rep_vs_new.png)
 
 Se analiza el balanceo de las clases de nuestra etiqueta para cada segmentacion:
 
-![Balance de Clases](Alejandro\exploring_data\class_check.png)
+![Balance de Clases](Alejandro/exploring_data/class_check.png)
 
 Si bien se hicieron muchas pruebas con ambas segmentaciones se observo un mejor rendimiento utilizando la totalidad de la BBDD, observando que las primeras transacciones de clientes aportaban mucha informacion al modelos para clasificar.
 
@@ -108,18 +924,18 @@ Por mas que las clases estaban bastante balanceadas 52,31 %, se realiza el balan
 
 Inicialmente hacemos un primer modelo con estas 17 caracteristicas que consideramos que pueden influir en la prediccion de nuestra etiqueta "needs_m_check". Utilizamos los hiperparametros standard del modelo RandomForest.
 
-![Modelo Inicial](Alejandro\no_segmentation_model\all_variables_results.png)
+![Modelo Inicial](Alejandro/no_segmentation_model/all_variables_results.png)
 
 Obtenemos los siguientes pesos de las caracteristicas, una accuracy del 97,58 % y la siguiente matriz de confusión.
 
-![Modelo Inicial Results](Alejandro\no_segmentation_model\features_all_variables.png)
+![Modelo Inicial Results](Alejandro/no_segmentation_model/features_all_variables.png)
 
 
-![Confusion Inicial](Alejandro\no_segmentation_model\confusion_initial.png)
+![Confusion Inicial](Alejandro/no_segmentation_model/confusion_initial.png)
 
 Vemos que si bien el accuracy es alto y la matriz de confusión muy buena, al analizar los errores de entrenamiento y prueba obtenemos lo siguiente:
 
-![Error de Modelo Inicial](Alejandro\no_segmentation_model\all_variables_overfitting.png)
+![Error de Modelo Inicial](Alejandro/no_segmentation_model/all_variables_overfitting.png)
 
 A partir de estos resultados y para mejorar el overfitting que hemos obtenido y viendo la distribucion de pesos nos quedaremos con las top 4 variables. Estas representan el 70% del modelo inical y son:
 
@@ -128,15 +944,15 @@ A partir de estos resultados y para mejorar el overfitting que hemos obtenido y 
 3) n_backs: Número de operaciones de CR totales del user_id
 4) n_recovery: Número de incidencias por recovery (departamento de moras) del user_id
 
-![Modelo Top 4 Variables](Alejandro\no_segmentation_model\features_top_4.png)
+![Modelo Top 4 Variables](Alejandro/no_segmentation_model/features_top_4.png)
 
 Se obtiene un error del 94,45 %, baja el accuracy, pero no demasiado simplicando el modelo de 17 caracteristicas a solo 4.
 
-![Modelo Top 4 Result](Alejandro\no_segmentation_model\top_4_model_results.png)
+![Modelo Top 4 Result](Alejandro/no_segmentation_model/top_4_model_results.png)
 
 Y las siguientes curvas de error, se ve que hemos reducido bastante el overfitting:
 
-![Modelo Top 4 Error](Alejandro\no_segmentation_model\top_4_error.png)
+![Modelo Top 4 Error](Alejandro/no_segmentation_model/top_4_error.png)
 
 A continuación para refinar nuestro modelo hacemos una busqueda de los hiperparametros optimos:
 
@@ -165,16 +981,16 @@ Dejamos la profundidad maxima y la seleccion del optimo para evaluar con un graf
 
 Evaluamos nuevamente el modelo con la seleccion de los hiperparametros optimos encontrados. Se encuentran los siguientes resultados:
 
-![Modelo Top 4 Hyperparameters Variables](Alejandro\no_segmentation_model\top_4_features_hyper_final.png)
+![Modelo Top 4 Hyperparameters Variables](Alejandro/no_segmentation_model/top_4_features_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Results](Alejandro\\no_segmentation_model\top_4_results_hyper.png)
+![Modelo Top 4 Hyperparameters Results](Alejandro//no_segmentation_model/top_4_results_hyper.png)
 
-![Modelo Top 4 Hyperparameters Error](Alejandro\no_segmentation_model\top_4_hyper_error.png)
+![Modelo Top 4 Hyperparameters Error](Alejandro/no_segmentation_model/top_4_hyper_error.png)
 
 
 Realizamos el analisis de la profundidad maxima del modelo en funcion a un grafico de boxplots y se obtiene lo siguiente:
 
-![Modelo Top 4 Hyperparameters Max Depth](Alejandro\no_segmentation_model\top_4_hyper_boxplots.png)
+![Modelo Top 4 Hyperparameters Max Depth](Alejandro/no_segmentation_model/top_4_hyper_boxplots.png)
 
 Se puede observar que el optimo de la profundiad es 10.
 
@@ -190,11 +1006,11 @@ Modificamos este hiperparametro y calculamos otra vez el modelo con los siguient
 
 Se obtienen los siguientes resultados:
 
-![Modelo Top 4 Hyperparameters Final Variables](Alejandro\no_segmentation_model\top_4_features_hyper_final.png)
+![Modelo Top 4 Hyperparameters Final Variables](Alejandro/no_segmentation_model/top_4_features_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Final Results](Alejandro\no_segmentation_model\top_4_results_hyper_final.png)
+![Modelo Top 4 Hyperparameters Final Results](Alejandro/no_segmentation_model/top_4_results_hyper_final.png)
 
-![Modelo Top 4 Hyperparameters Final Error](Alejandro\no_segmentation_model\top_4_hyper_final_error.png)
+![Modelo Top 4 Hyperparameters Final Error](Alejandro/no_segmentation_model/top_4_hyper_final_error.png)
 
 
 
