@@ -84,9 +84,11 @@ Este modelo ayudará a identificar los casos que realmente requieren control man
 
 ## Conclusión
 
-Con este proyecto, buscamos mejorar la eficiencia en el proceso de control manual de *cash requests*, utilizando un modelo predictivo para optimizar los recursos y mejorar el rendimiento general del proceso.
+El presente proyecto tiene como objetivo optimizar el proceso de control manual de solicitudes de préstamos, abordando una problemática inicial en la que solo el 60% de las solicitudes controladas manualmente eran realmente necesarias. Esto generaba una sobrecarga operativa y un uso ineficiente de recursos. Utilizando técnicas de Data Science y Machine Learning, buscamos desarrollar un modelo predictivo basado en transacciones históricas que permita identificar de manera precisa cuáles solicitudes requieren un control manual.
 
+Este modelo no solo reducirá la carga operativa al eliminar controles innecesarios, sino que también mejorará la eficiencia global del proceso, contribuyendo al uso óptimo de recursos humanos y tecnológicos. Como resultado, esperamos generar un impacto significativo en la toma de decisiones y en la calidad del servicio al cliente.
 
+---
 
 ## **Modelos utilizando modelos del tipo arbol de desicion: RandomForest**
 
@@ -103,11 +105,6 @@ Se analiza el balanceo de las clases de nuestra etiqueta para cada segmentacion:
 Si bien se hicieron muchas pruebas con ambas segmentaciones se observo un mejor rendimiento utilizando la totalidad de la BBDD, observando que las primeras transacciones de clientes aportaban mucha informacion al modelos para clasificar.
 
 Por mas que las clases estaban bastante balanceadas 52,31 %, se realiza el balanceo de clases para no tener sesgo a ninguna de las 2 clases.
-
-![Correlacion Inicial](Alejandro\corr_simple.png)
-
-Hacemos una matriz de correlacion inicial unicamente para tener una nocion inicial de todas nuestras caracteristicas y hallar dependencias lineales.
-Se puede ver una correlacion lineal muy notoria entre las caracteristicas "n_cr_fe_w" y  "n_cr_fe_m", excluimos de nuestro modelo "n_cr_fe_m".
 
 Inicialmente hacemos un primer modelo con estas 17 caracteristicas que consideramos que pueden influir en la prediccion de nuestra etiqueta "needs_m_check". Utilizamos los hiperparametros standard del modelo RandomForest.
 
