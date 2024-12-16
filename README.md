@@ -929,9 +929,7 @@ Se puede apreciar que para ser el punto de partida está muy bien.
 
 ![Restultados1BASE](Alba/images/distribucionprobabilidadesBASE.png)
 
-![Restultados2BASE](Alba/images/AccuracyBASE.png)
-
-![Restultados3BASE](Alba/images/matrizconfusionBASE.png)
+![Restultados2BASE](Alba/images/baseppio.png)
 
 ![Restultados4BASE](Alba/images/ROCcurva2.png)
 
