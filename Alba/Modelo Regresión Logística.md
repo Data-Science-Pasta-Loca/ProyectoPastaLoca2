@@ -1,11 +1,5 @@
 # **MODELO DE REGRESIÓN LOGÍSTICA**
 
-# Preliminares:
-- Características consideradas (JUSTIFICAR)
-- Rellenar ceros (JUSTIFICAR)
-- Poner lo de news y repetitivo
-
-
 # Introducción
 
 Este análisis explica la implementación de modelos de Regresión Logística para **predecir la necesidad de verificación manual (neeed manual check) en nuestro conjunto de datos**. Las características que se han incluido en este estudio son las justificadas previamente en nuestro *df_hyper*, por lo tanto al empezar esta implementación contamos con 16 características (6 de ellas calculadas por nosotros, 4 exógenas añadidas y el resto del conjunto de datos original) más la variable objetivo (columna no original).
@@ -32,7 +26,7 @@ Se utilizó el método de remuestreo RandomUnderSampler para equilibrar las clas
 
     - Las variables categóricas fueron convertidas a numéricas mediante codificación `OneHotEncoding`.
 
-    - Los valores faltantes en las variables numéricas se rellenaron con ceros. (JUSTIFICACIÓN??)
+    - Los valores faltantes en las variables se rellenaron con ceros.
 
     - Se estandarizaron las características utilizando `StandardScaler`. Posteriormente se provó el mismo proceso pero con otra estandarización (`MaxMinScaler`) para comparar y detectar si hubiera sido mejor elección.
   
@@ -178,11 +172,13 @@ Para los usuarios nuevos (el primer registro de interacción que tenemos del usu
 
 Es por esto, que en el estudio comparativo final solo contemplaremos el proceso hecho con `StandardScaler` para la estandarización y con la totalidad de los datos (tanto los usuarios repetitivos como los "nuevos"). Eso se traduce en **varios modelos de regresión logística** con distintos parámetros para los que estudiamos los resultados de cada uno y sacamos conclusiones.
 
-COMPARATIVA RESULTADOS MODELOS (ACCURACY, AUC-ROC, FN%, Ein, Eout) STDSCALER Y MANMIX y tambien NEW/REPETITIVE_USERS
+![Boxplotfinal](Alba/images/boxplotFINAL.png)
 
 Con esta información que resume nuestros modelos, decidimos que para Regresión Logística el mejor modelo es nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
-Aún así, para mejorar la tasa de `Falsos Negativos` aplicamos una variación al umbral (`treshold`) y lo modificamos a `0.4`, hecho que minima estos FN al XXX%
+Una vez escogido, como sabemos que sin el balance de cargas el modelo se desempeñaba mejor, nos quedamos el que no tiene el balanceo y aplicamos una variación al umbral (`treshold`) para dejarlo en `0.4`, hecho que minimiza estos FN al **8.67%**.
 
-RESULTADOS MODELO FINAL CON UMBRAL 0.4
+![Modelofinal](Alba/images/resultadosFINALumbral.png)
+
+![Modelofinal2](Alba/images/curvaaprendizajeFINALNOBALANCED.png)
 
 Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo objetivo para ver si tiene mejor desempeño y poder comparar. 
