@@ -160,15 +160,23 @@ Los coeficientes del modelo permiten interpretar las variables más influyentes:
 
 # Comparación de MODELOS
 
-Una vez hecho todo este proceso, (como ya mencionamos el principio del análisis de regresión logística) replicamos todo este estudio pero cambiando el tipo de estandarización de datos. En lugar de usar el `StandardScaler` usamos el `MaxMinScaler`. Por lo que tenemos todo este estudio duplicado. 
+Una vez hecho todo este proceso, (como ya mencionamos el principio del análisis de regresión logística) replicamos todo este estudio pero cambiando el tipo de estandarización de datos. En lugar de usar el `StandardScaler` usamos el `MinMaxScaler`. Por lo que tenemos todo este estudio duplicado. 
 
-Con estas **10 variantes del modelo de regresión logística** estudiamos los resultados de cada uno para comparar y poder sacar conclusiones.
+Lo que se observa al aplicar esta estandarización del `MinMaxScaler` es que la curva de aprendizaje no muestra un buen desempeño ya que se cruzan las líneas de los errores. Esto puede ser síntoma de un sobreajuste que podría explicarse debido a la mayor sensibilidad introducida por este escalador que al transofrmar los datos a un rango fijo [0,1] podrá hacer al modelo más sensible a ruidos o patrones específicos en el entrenamiento.
+
+![MinMax1](Alba/images/curvaaprendizajeMINMAX.npg)
+
+Antes de seguir, mostramos como la segmentación de los datos en `new_users`y `repetitive_users` no mejora el desempeño de nuestro modelo y por lo tanto se decide no tomar esto en cuenta.
+
+![Segmentación1](Alba/images/segmentacion.npg)
+
+Es por esto, que en el estudio comparativo final solo contemplaremos el proceso hecho con `StandardScaler` para la estandarización. Eso significa, **5 variantes del modelo de regresión logística** para los que estudiamos los resultados de cada uno para comparar y poder sacar conclusiones.
 
 COMPARATIVA RESULTADOS MODELOS (ACCURACY, AUC-ROC, FN%, Ein, Eout) STDSCALER Y MANMIX y tambien NEW/REPETITIVE_USERS
 
 Con esta información que resume nuestros modelos, decidimos que para Regresión Logística nos quedamos con nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
-Aún así, para intentar mejorar la tasa de `Falsos Negativos` aplicamos una variación al umbral (`treshold`) y lo modificamos a 0.4, hecho que minima estos FN al XXX%
+Aún así, para intentar mejorar la tasa de `Falsos Negativos` aplicamos una variación al umbral (`treshold`) y lo modificamos a `0.4`, hecho que minima estos FN al XXX%
 
 RESULTADOS MODELO FINAL CON UMBRAL 0.4
 
-Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo problema para ver si tiene mejor desempeño y poder comparar. 
+Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo objetivo para ver si tiene mejor desempeño y poder comparar. 
