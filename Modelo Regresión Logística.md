@@ -190,12 +190,10 @@ Es por esto, que en el estudio comparativo final solo contemplaremos el proceso 
 ![Boxplotfinal](Alba/images/boxplotFINAL.png)
 
 Con esta información que resume nuestros modelos, decidimos que para Regresión Logística escogemos como el mejor modelo a nuestro **MODELO CON SELECCIÓN MANUAL DE CARACTERÍSTICAS** con `StandardScaler`.
-Una vez escogido, aplicamos una variación al umbral (`treshold`) para dejarlo en `0.4`, hecho que minimiza los FN al **8.67%**.
+Una vez escogido, aplicamos una variación al umbral (`treshold`) para dejarlo en `0.4`, hecho que minimiza los `FN` (Falsos Negativos) del 11,81% al **8.87%** que es muy parecido al valor de los `FP` (Falsos Positivos).
 
 Resultado `MODELO FINAL`
 
-![Modelofinal](Alba/images/resultadosFINALumbral.png)
-
-![Modelofinal2](Alba/images/curvaaprendizajeFINALNOBALANCED.png)
+![Modelofinal](Alba/images/finalUMBRAL2.png)
 
 Nuestro estudio con el modelo de Regresión Logística llega hasta aquí, pero decidimos probar también otro tipo de modelo para el mismo objetivo para ver si tiene mejor desempeño y poder comparar. 
