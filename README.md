@@ -338,23 +338,11 @@ divisa_exogenas = divisa_exogenas.merge(btc_gbp_data, on='Date', how='left').fil
 ​    
 
 
-![png](./README.assets/1.EDA_92_1.png)
-    
-
-![png](./README.assets/1.EDA_93_0.png)
-    ..
-
-  ![png](./README.assets/1.EDA_94_0.png)
-​    ..
-
 ​    ![png](./README.assets/1.EDA_95_0.png)
 ​    
 
 
 
-```
-# Aqui claramente, estan filtrada las que se han completado correctamente.
-```
 
 ![png](./README.assets/1.EDA_96_0.png)
 
